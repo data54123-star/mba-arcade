@@ -3,65 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBA Arcade Lobby</title>
+    <title>Arcade Lobby</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
     <style>
-        body { background-color: #111; color: white; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .header-bar { width: 100%; max-width: 800px; display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .user-info { color: #00ff00; margin-right: 20px; font-weight: bold; }
-        .logout-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 10px; cursor: pointer; }
-        .logout-btn:hover { border-color: red; color: red; }
-        h1 { text-transform: uppercase; border-bottom: 2px solid #00ff00; padding-bottom: 10px; margin-bottom: 40px; color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; width: 100%; max-width: 800px; }
-        .game-card { background: #222; border: 2px solid #444; border-radius: 15px; overflow: hidden; transition: transform 0.2s; cursor: pointer; text-decoration: none; color: white; display: flex; flex-direction: column; }
+        body { 
+            background-color: #111; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+        }
+
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; }
+        
+        /* --- AVATAR VORSCHAU (KLEIN OBEN) --- */
+        #current-user-avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 2px solid #00ff00;
+            margin-bottom: 10px;
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(0,255,0,0.3);
+        }
+
+        /* --- CONTAINER STEUERUNG --- */
+        .view-section { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
+        .active { display: flex; }
+
+        /* --- BUTTONS & KARTEN --- */
+        .game-card {
+            background: #222; border: 1px solid #444; border-radius: 10px;
+            padding: 20px; margin: 15px 0; width: 100%; text-align: center;
+            cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+        }
         .game-card:hover { transform: translateY(-5px); border-color: #00ff00; }
-        .card-image { height: 150px; background: linear-gradient(135deg, #000 25%, #111 25%, #111 50%, #000 50%, #000 75%, #111 75%, #111 100%); background-size: 20px 20px; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
-        .card-info { padding: 15px; text-align: center; border-top: 1px solid #444; }
-        .card-title { font-size: 1.2rem; font-weight: bold; margin: 0; color: #fff; }
-        .card-desc { font-size: 0.8rem; color: #888; margin-top: 5px; }
+        .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; }
+        .game-desc { color: #aaa; font-size: 0.9rem; }
+
+        .btn-action {
+            margin-top: 15px; width: 100%; padding: 12px;
+            background: #333; color: white; border: 1px solid #888;
+            cursor: pointer; font-family: inherit; font-weight: bold;
+        }
+        .btn-action:hover { background: #444; border-color: #fff; }
+
+        .btn-logout {
+            margin-top: 30px; background: transparent; border: 1px solid #ff4444; color: #ff4444;
+            padding: 10px 20px; cursor: pointer; font-family: inherit; border-radius: 5px;
+        }
+        
+        /* --- PROFIL EDIT STYLE --- */
+        .avatar-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+        .avatar-option {
+            width: 60px; height: 60px; border: 2px solid #333; cursor: pointer;
+            opacity: 0.6; transition: all 0.2s; object-fit: cover;
+        }
+        .avatar-option:hover { transform: scale(1.1); opacity: 1; }
+        .avatar-option.selected { border-color: #00ff00; opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px #00ff00; }
+
+        input { padding: 10px; width: 100%; background: #222; border: 1px solid #555; color: white; margin-bottom: 10px; box-sizing: border-box;}
     </style>
 </head>
 <body>
-    <div class="header-bar">
-        <span class="user-info" id="displayUser">Lade...</span>
-        <button class="logout-btn" onclick="doLogout()">[ Logout ]</button>
-    </div>
-    <h1>MBA Arcade Collection</h1>
-    <div class="game-grid">
-        <a href="snake.html" class="game-card">
-            <div class="card-image">🐍</div>
-            <div class="card-info"><p class="card-title">MBA SNAKE</p><p class="card-desc">Global Highscore Edition</p></div>
-        </a>
-        <div class="game-card" style="opacity: 0.5; cursor: default;">
-            <div class="card-image">🚧</div>
-            <div class="card-info"><p class="card-title">COMING SOON</p><p class="card-desc">...</p></div>
+
+    <h1>MBA ARCADE</h1>
+    
+    <img id="current-user-avatar" src="100.jpg" alt="Avatar">
+    
+    <p id="user-greeting">Lade...</p>
+
+    <div id="view-dashboard" class="view-section active">
+        
+        <div class="game-card" onclick="window.location.href='snake.html'">
+            <span class="game-title">🐍 MBA SNAKE</span>
+            <span class="game-desc">Global Edition</span>
         </div>
+
+        <div class="game-card" style="opacity: 0.5; cursor: not-allowed;">
+            <span class="game-title">🚧 COMING SOON</span>
+            <span class="game-desc">Neues Spiel...</span>
+        </div>
+
+        <button class="btn-action" onclick="switchView('profile')">⚙️ PROFIL BEARBEITEN</button>
+        <button class="btn-logout" onclick="logout()">Abmelden</button>
     </div>
+
+    <div id="view-profile" class="view-section">
+        <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center;">AVATAR WÄHLEN</h2>
+        
+        <div class="avatar-grid" id="avatar-container">
+            </div>
+
+        <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center; margin-top: 20px;">PASSWORT ÄNDERN</h2>
+        <input type="password" id="new-password" placeholder="Neues Passwort eingeben">
+        <button class="btn-action" onclick="changeUserPassword()">PASSWORT SPEICHERN</button>
+
+        <hr style="border: 0; border-top: 1px solid #333; width: 100%; margin: 20px 0;">
+        
+        <button class="btn-action" onclick="switchView('dashboard')">◀ ZURÜCK ZUR LOBBY</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- HIER DEINE CONFIG EINFÜGEN ---
+        // --- WICHTIG: CONFIG HIER EINFÜGEN ---
         const firebaseConfig = {
-             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
-            authDomain: "mba-arcade.firebaseapp.com",
-            projectId: "mba-arcade",
-            storageBucket: "mba-arcade.firebasestorage.app",
-            messagingSenderId: "497628563783",
-            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+            // ... dein Config Block ...
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
+        // --- AVATAR LOGIK ---
+        const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
+        
+        function initProfile() {
+            const container = document.getElementById('avatar-container');
+            const currentImg = document.getElementById('current-user-avatar');
+            
+            // Laden oder Standard
+            const savedAvatar = localStorage.getItem('mba_avatar') || myAvatars[0];
+            currentImg.src = savedAvatar; // Oben anzeigen
+
+            // Grid erstellen
+            container.innerHTML = "";
+            myAvatars.forEach(filename => {
+                const img = document.createElement('img');
+                img.src = filename;
+                img.className = 'avatar-option';
+                if(filename === savedAvatar) img.classList.add('selected');
+
+                img.onclick = function() {
+                    // Visuell ändern
+                    document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+                    img.classList.add('selected');
+                    // Speichern
+                    localStorage.setItem('mba_avatar', filename);
+                    // Oben aktualisieren
+                    document.getElementById('current-user-avatar').src = filename;
+                };
+                container.appendChild(img);
+            });
+        }
+
+        // --- PASSWORT ÄNDERN ---
+        window.changeUserPassword = function() {
+            const newPw = document.getElementById('new-password').value;
+            const user = auth.currentUser;
+
+            if (newPw.length < 6) {
+                alert("Passwort muss mindestens 6 Zeichen haben!");
+                return;
+            }
+
+            if (user) {
+                updatePassword(user, newPw).then(() => {
+                    alert("Passwort erfolgreich geändert!");
+                    document.getElementById('new-password').value = "";
+                }).catch((error) => {
+                    console.error(error);
+                    // WICHTIG: Aus Sicherheitsgründen erlaubt Firebase das oft nur,
+                    // wenn der Login erst kurz her ist.
+                    if (error.code === 'auth/requires-recent-login') {
+                        alert("Bitte logge dich neu ein, um das Passwort zu ändern.");
+                        logout();
+                    } else {
+                        alert("Fehler: " + error.message);
+                    }
+                });
+            }
+        }
+
+        // --- ANSICHT WECHSELN ---
+        window.switchView = function(viewName) {
+            document.getElementById('view-dashboard').classList.remove('active');
+            document.getElementById('view-profile').classList.remove('active');
+            
+            if(viewName === 'dashboard') document.getElementById('view-dashboard').classList.add('active');
+            if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
+        }
+
+        // --- AUTH & START ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                let cleanName = user.email.replace("@mba-arcade.com", "");
-                document.getElementById('displayUser').innerText = "User: " + cleanName;
+                const name = user.email.replace("@mba-arcade.com", "");
+                document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
+                initProfile();
             } else {
-                window.location.href = "index.html"; // Nicht eingeloggt? Rauswurf!
+                window.location.href = "index.html";
             }
         });
-        window.doLogout = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); }
+
+        window.logout = function() {
+            signOut(auth).then(() => window.location.href = "index.html");
+        }
     </script>
 </body>
 </html>
