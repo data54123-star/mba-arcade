@@ -255,27 +255,66 @@
         window.changeDirection = changeDirection; 
 
         function draw() {
+            function draw() {
+            // 1. Hintergrund malen
             ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Schlange malen
             for(let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = "#00ff00"; ctx.strokeStyle = "#000000";
-                ctx.fillRect(snake[i].x, snake[i].y, box, box); ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+                ctx.fillStyle = (i == 0) ? "#00ff00" : "#00ff00"; // Kopf und Körper grün
+                ctx.strokeStyle = "#000000";
+                
+                // Optional: Den Kopf etwas heller machen, damit man sieht wo vorne ist
+                if(i == 0) ctx.fillStyle = "#33ff33"; 
+
+                ctx.fillRect(snake[i].x, snake[i].y, box, box); 
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
             }
+
+            // 3. Essen malen
             ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
+
+            // 4. Neue Position berechnen
             let snakeX = snake[0].x; let snakeY = snake[0].y;
-            if(d == "LEFT") snakeX -= box; if(d == "UP") snakeY -= box; if(d == "RIGHT") snakeX += box; if(d == "DOWN") snakeY += box;
+            if(d == "LEFT") snakeX -= box; 
+            if(d == "UP") snakeY -= box; 
+            if(d == "RIGHT") snakeX += box; 
+            if(d == "DOWN") snakeY += box;
+            
+            // Essenlogik
             if(snakeX == food.x && snakeY == food.y) { score++; createFood(); } else { snake.pop(); }
             
             let newHead = { x: snakeX, y: snakeY };
+            
+            // 5. CRASH LOGIK (Hier ist die Änderung!)
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                
+                // A) Spiel stoppen
                 clearInterval(game);
+
+                // B) Den Crash visuell darstellen (Kopf in ROT malen)
+                ctx.fillStyle = "#ff0000"; // Rot für Crash!
+                ctx.fillRect(snakeX, snakeY, box, box);
+                ctx.strokeStyle = "#ffffff"; // Weißer Rand für Kontrast
+                ctx.strokeRect(snakeX, snakeY, box, box);
+
+                // C) Speichern
                 saveScore(score);
-                alert("Game Over! Score: " + score);
-                document.getElementById('start-screen').classList.remove('hidden');
-                document.getElementById('game-view').classList.add('hidden');
+
+                // D) Kurze Verzögerung, damit man den roten Kopf sieht, bevor der Alert kommt
+                setTimeout(() => {
+                    alert("Game Over! Score: " + score);
+                    document.getElementById('start-screen').classList.remove('hidden');
+                    document.getElementById('game-view').classList.add('hidden');
+                }, 50); // 50ms warten
+                
                 return;
             }
+
+            // Wenn kein Crash: Kopf hinzufügen
             snake.unshift(newHead);
             document.getElementById("score").innerText = score;
+        }
         }
         function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
     </script>
