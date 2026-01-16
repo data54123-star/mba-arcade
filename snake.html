@@ -150,6 +150,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+
+        document.getElementById('start-screen').classList.remove('hidden');
+        document.getElementById('game-view').classList.add('hidden');
         
         let playerName = "Gast";
 
@@ -255,26 +258,21 @@
         window.changeDirection = changeDirection; 
 
         function draw() {
-            function draw() {
-            // 1. Hintergrund malen
+            // 1. Hintergrund
             ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // 2. Schlange malen
             for(let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = (i == 0) ? "#00ff00" : "#00ff00"; // Kopf und Körper grün
+                ctx.fillStyle = (i == 0) ? "#33ff33" : "#00ff00"; // Kopf heller
                 ctx.strokeStyle = "#000000";
-                
-                // Optional: Den Kopf etwas heller machen, damit man sieht wo vorne ist
-                if(i == 0) ctx.fillStyle = "#33ff33"; 
-
                 ctx.fillRect(snake[i].x, snake[i].y, box, box); 
                 ctx.strokeRect(snake[i].x, snake[i].y, box, box);
             }
 
-            // 3. Essen malen
+            // 3. Essen
             ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
 
-            // 4. Neue Position berechnen
+            // 4. Nächsten Schritt berechnen
             let snakeX = snake[0].x; let snakeY = snake[0].y;
             if(d == "LEFT") snakeX -= box; 
             if(d == "UP") snakeY -= box; 
@@ -286,36 +284,42 @@
             
             let newHead = { x: snakeX, y: snakeY };
             
-            // 5. CRASH LOGIK (Hier ist die Änderung!)
+            // 5. CRASH LOGIK (Optimiert)
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 
-                // A) Spiel stoppen
                 clearInterval(game);
 
-                // B) Den Crash visuell darstellen (Kopf in ROT malen)
-                ctx.fillStyle = "#ff0000"; // Rot für Crash!
-                ctx.fillRect(snakeX, snakeY, box, box);
-                ctx.strokeStyle = "#ffffff"; // Weißer Rand für Kontrast
-                ctx.strokeRect(snakeX, snakeY, box, box);
+                // TRICK: Koordinaten für das rote Rechteck korrigieren ("Clamp")
+                // Damit es nicht außerhalb des Bildes gemalt wird
+                let crashDrawX = snakeX;
+                let crashDrawY = snakeY;
 
-                // C) Speichern
+                if (crashDrawX < 0) crashDrawX = 0; // Linke Wand
+                if (crashDrawX >= canvas.width) crashDrawX = canvas.width - box; // Rechte Wand
+                if (crashDrawY < 0) crashDrawY = 0; // Decke
+                if (crashDrawY >= canvas.height) crashDrawY = canvas.height - box; // Boden
+
+                // Jetzt den roten Block malen (an der sichtbaren Kante)
+                ctx.fillStyle = "#ff0000"; 
+                ctx.fillRect(crashDrawX, crashDrawY, box, box);
+                ctx.strokeStyle = "#ffffff";
+                ctx.strokeRect(crashDrawX, crashDrawY, box, box);
+
                 saveScore(score);
 
-                // D) Kurze Verzögerung, damit man den roten Kopf sieht, bevor der Alert kommt
                 setTimeout(() => {
                     alert("Game Over! Score: " + score);
+                    // Ansicht zurücksetzen
                     document.getElementById('start-screen').classList.remove('hidden');
                     document.getElementById('game-view').classList.add('hidden');
-                }, 50); // 50ms warten
-                
+                }, 50);
                 return;
             }
 
-            // Wenn kein Crash: Kopf hinzufügen
             snake.unshift(newHead);
             document.getElementById("score").innerText = score;
         }
-        }
+
         function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
     </script>
 </body>
