@@ -19,42 +19,41 @@
             overflow-x: hidden;
         }
 
-        /* --- LAYOUT CONTAINER (NEU) --- */
+        /* --- STATUS ANZEIGE (NEU) --- */
+        #status-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            z-index: 1000;
+            border: 1px solid #333;
+            transition: all 0.3s;
+        }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+
+        /* --- LAYOUT CONTAINER --- */
         .main-layout {
             display: flex;
-            flex-wrap: wrap; /* Damit es auf Handys untereinander rutscht */
+            flex-wrap: wrap; 
             justify-content: center;
             align-items: flex-start;
             gap: 50px;
-            margin-top: 80px; /* Platz für den Home Button */
+            margin-top: 80px; 
             width: 100%;
             max-width: 1200px;
             padding: 20px;
             box-sizing: border-box;
         }
 
-        .left-column {
-            flex: 1;
-            min-width: 300px; /* Mindestbreite */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .left-column { flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; }
+        .right-column { width: 350px; min-width: 300px; }
 
-        .right-column {
-            width: 350px; /* Feste Breite für die Tabelle */
-            min-width: 300px;
-        }
-
-        /* --- TABELLEN DESIGN (NEU GESTYLT) --- */
-        .highscore-box {
-            border: 2px solid #333;
-            padding: 20px;
-            border-radius: 15px;
-            background: #111;
-            box-shadow: 0 0 20px rgba(0,255,0,0.1);
-        }
-
+        /* --- TABELLEN DESIGN --- */
+        .highscore-box { border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
         table { border-collapse: collapse; width: 100%; color: white; }
         th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 15px; text-transform: uppercase; }
@@ -62,7 +61,6 @@
 
         /* --- SPIEL ELEMENTE --- */
         canvas { border: 4px solid #808080; background-color: #111; max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        
         .controls { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px; margin-top: 20px; }
         .ctrl-btn { width: 60px; height: 60px; background: #333; border: 2px solid #808080; color: white; font-size: 1.5rem; border-radius: 10px; cursor: pointer; user-select: none; }
         .up { grid-column: 2; grid-row: 1; } .left { grid-column: 1; grid-row: 2; } .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
@@ -71,10 +69,9 @@
         .hidden { display: none !important; }
         .highlight { color: #00ff00; font-weight: bold; }
         
-        /* Handy Anpassung */
         @media (max-width: 800px) {
             .main-layout { flex-direction: column; align-items: center; }
-            .right-column { width: 100%; order: 2; } /* Tabelle nach unten auf Handys */
+            .right-column { width: 100%; order: 2; } 
             .left-column { width: 100%; order: 1; }
         }
     </style>
@@ -89,6 +86,8 @@
         🏠 HOME
     </button>
 
+    <div id="status-display" class="status-online">ONLINE 🟢</div>
+
     <div class="main-layout">
         
         <div class="left-column">
@@ -96,9 +95,7 @@
             <div id="start-screen" style="text-align: center; padding: 40px 0;">
                 <h1 style="color: #00ff00; font-size: 3.5rem; text-shadow: 0 0 20px rgba(0,255,0,0.5); margin: 0;">MBA SNAKE</h1>
                 <p style="color: #888; margin-top: -10px; letter-spacing: 2px;">GLOBAL EDITION</p>
-                
                 <h2 id="welcome-msg" style="color: white; margin-top: 40px; font-size: 1.5rem;">Lade Profil...</h2>
-                
                 <button onclick="startGame()" style="
                     margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; 
                     background: #000; color: #00ff00; border: 2px solid #00ff00; 
@@ -113,9 +110,7 @@
                     <span id="displayName">Spieler: ...</span>
                     <span>Score: <span id="score" class="highlight">0</span></span>
                 </div>
-
                 <canvas id="gameCanvas" width="400" height="400"></canvas>
-
                 <div class="controls">
                     <button class="ctrl-btn up" onclick="changeDirection({keyCode: 38})">▲</button>
                     <button class="ctrl-btn left" onclick="changeDirection({keyCode: 37})">◀</button>
@@ -129,20 +124,11 @@
             <div class="highscore-box">
                 <h2 style="color:#00ff00; text-align: center; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">🏆 TOP 10</h2>
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%">#</th>
-                            <th>Name</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body">
-                        <tr><td colspan="3">Lade Daten...</td></tr>
-                    </tbody>
+                    <thead><tr><th style="width: 15%">#</th><th>Name</th><th>Score</th></tr></thead>
+                    <tbody id="leaderboard-body"><tr><td colspan="3">Lade Daten...</td></tr></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
     <script type="module">
@@ -150,15 +136,9 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- WICHTIG: HIER WIEDER DEINE CONFIG EINFÜGEN! ---
+        // --- HIER WIEDER DEINE FIREBASE CONFIG EINFÜGEN! ---
         const firebaseConfig = {
-            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
-            authDomain: "mba-arcade.firebaseapp.com",
-            projectId: "mba-arcade",
-            storageBucket: "mba-arcade.firebasestorage.app",
-            messagingSenderId: "497628563783",
-            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
-            // ... dein Code ...
+             // ... DEIN CONFIG BLOCK ...
         };
 
         const app = initializeApp(firebaseConfig);
@@ -166,6 +146,22 @@
         const auth = getAuth(app);
         
         let playerName = "Gast";
+
+        // --- ONLINE/OFFLINE ERKENNUNG (NEU) ---
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('status-display');
+            if (navigator.onLine) {
+                statusEl.innerText = "ONLINE 🟢";
+                statusEl.className = "status-online";
+                loadLeaderboard(); // Wenn wir wieder online sind, Highscore neu laden!
+            } else {
+                statusEl.innerText = "OFFLINE 🔴";
+                statusEl.className = "status-offline";
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus(); // Beim Start prüfen
 
         // --- LOGIN & LADEN ---
         onAuthStateChanged(auth, (user) => {
@@ -187,6 +183,7 @@
         }
 
         async function loadLeaderboard() {
+            if (!navigator.onLine) return; // Nicht laden wenn offline
             const tbody = document.getElementById('leaderboard-body');
             try {
                 const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
@@ -195,17 +192,12 @@
                 let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const entry = doc.data();
-                    // Design: Rang 1, 2, 3 bekommen Medaillen
                     let rankDisplay = rank + ".";
                     if(rank === 1) rankDisplay = "🥇";
                     if(rank === 2) rankDisplay = "🥈";
                     if(rank === 3) rankDisplay = "🥉";
 
-                    let row = `<tr>
-                        <td>${rankDisplay}</td>
-                        <td style="text-align: left; padding-left: 20px;">${entry.name}</td>
-                        <td class="highlight">${entry.score}</td>
-                    </tr>`;
+                    let row = `<tr><td>${rankDisplay}</td><td style="text-align: left; padding-left: 20px;">${entry.name}</td><td class="highlight">${entry.score}</td></tr>`;
                     tbody.innerHTML += row;
                     rank++;
                 });
@@ -214,9 +206,13 @@
         }
 
         async function saveScore(points) {
+            if (!navigator.onLine) {
+                alert("Du bist offline! Score konnte nicht gespeichert werden.");
+                return;
+            }
             try {
                 await addDoc(collection(db, "scores"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
-                loadLeaderboard(); // Tabelle sofort aktualisieren
+                loadLeaderboard(); 
             } catch (e) { console.error("Save error", e); }
         }
 
@@ -261,16 +257,13 @@
             ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
             let snakeX = snake[0].x; let snakeY = snake[0].y;
             if(d == "LEFT") snakeX -= box; if(d == "UP") snakeY -= box; if(d == "RIGHT") snakeX += box; if(d == "DOWN") snakeY += box;
-            
             if(snakeX == food.x && snakeY == food.y) { score++; createFood(); } else { snake.pop(); }
             
             let newHead = { x: snakeX, y: snakeY };
-            
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(game);
                 saveScore(score);
                 alert("Game Over! Score: " + score);
-                // Reset Layout
                 document.getElementById('start-screen').classList.remove('hidden');
                 document.getElementById('game-view').classList.add('hidden');
                 return;
