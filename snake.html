@@ -37,58 +37,55 @@
 </head>
 <body>
 
-    <div id="status-anzeige" class="status-online">● Online</div>
+    <button onclick="window.location.href='lobby.html'" style="
+        position: absolute; top: 15px; left: 15px; 
+        background: #000; color: #00ff00; border: 1px solid #00ff00; 
+        padding: 8px 12px; border-radius: 5px; cursor: pointer;
+        font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
+        🏠 HOME
+    </button>
 
-    <div id="start-view" class="view active">
-        <h1>MBA SNAKE GLOBAL</h1>
-        <div class="start-container">
-            <div class="start-left">
-                <div class="input-group">
-                    <p>Dein Name:</p>
-                    <input type="text" id="playerName" placeholder="Spielername">
-                </div>
-                <button class="start-btn" onclick="startGame()">START GAME</button>
-            </div>
-            <div class="start-right">
-                <h3 style="color: #808080;">GLOBAL TOP 10</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Rang</th>    <th>Name</th>
-                            <th>Score</th>
-                            <th>Datum</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body">
-                        <tr><td colspan="4">Lade Daten...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div id="start-screen" class="view active" style="text-align: center; margin-top: 50px;">
+        <h1 style="color: #00ff00; font-size: 3rem; text-shadow: 0 0 20px rgba(0,255,0,0.5);">MBA SNAKE</h1>
+        
+        <h2 id="welcome-msg" style="color: white;">Lade Profil...</h2>
+        
+        <button onclick="startGame()" style="
+            margin-top: 30px; padding: 20px 40px; font-size: 1.5rem; 
+            background: #000; color: #00ff00; border: 2px solid #00ff00; 
+            cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
+            box-shadow: 0 0 15px rgba(0,255,0,0.3);">
+            SPIEL STARTEN
+        </button>
     </div>
 
-    <div id="game-view" class="view">
+    <div id="game-view" class="view" style="display: none;"> <h2 style="color:#00ff00">GLOBAL TOP 10</h2>
+        <table>
+            <thead><tr><th>#</th><th>Name</th><th>Score</th><th>Datum</th></tr></thead>
+            <tbody id="leaderboard-body"><tr><td colspan="4">Lade Daten...</td></tr></tbody>
+        </table>
+
         <div id="game-info">
-            <span id="displayName">Spieler: -</span>
+            <span id="displayName">Spieler: ...</span>
             <span>Score: <span id="score">0</span></span>
         </div>
+
         <canvas id="gameCanvas" width="400" height="400"></canvas>
+
         <div class="controls">
             <button class="ctrl-btn up" onclick="changeDirection({keyCode: 38})">▲</button>
             <button class="ctrl-btn left" onclick="changeDirection({keyCode: 37})">◀</button>
             <button class="ctrl-btn down" onclick="changeDirection({keyCode: 40})">▼</button>
             <button class="ctrl-btn right" onclick="changeDirection({keyCode: 39})">▶</button>
         </div>
-        <button onclick="abortGame()" style="margin-top:20px; background:none; color:#888; border:1px solid #333; padding:5px;">Zurück zum Menü</button>
     </div>
 
     <script type="module">
-        // 1. Firebase Bibliotheken importieren
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // 2. DEINE KONFIGURATION (HIER EINFÜGEN!)
-        // Kopiere den Block aus der Firebase Console und ersetze diesen Teil:
+        // --- DEINE CONFIG HIER EINFÜGEN ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -96,111 +93,72 @@
             storageBucket: "mba-arcade.firebasestorage.app",
             messagingSenderId: "497628563783",
             appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+            // ... hier wieder deinen Block einfügen ...
         };
 
-        // 3. Firebase starten
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         
-        // Globale Verfügbarkeit für unsere alten Funktionen schaffen
-        window.db = db;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.limit = limit;
-        window.getDocs = getDocs;
+        let playerName = "Gast"; // Standardwert, falls was schiefgeht
 
-        // Bestenliste sofort laden
-        loadLeaderboard();
-    </script>
+        // --- AUTOMATISCHER LOGIN CHECK ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Hier passiert die Magie: Name aus der "Fake-Email" holen
+                playerName = user.email.replace("@mba-arcade.com", "");
+                
+                // Begrüßung auf dem Start-Screen
+                document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
+                
+                // Anzeige im Spiel
+                document.getElementById('displayName').innerText = "Spieler: " + playerName;
+                
+                // Highscore laden
+                loadLeaderboard();
+            } else {
+                // Wenn keiner eingeloggt ist -> Zurück zum Login
+                window.location.href = "index.html";
+            }
+        });
 
-    <script>
-        /* SERVICE WORKER */
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(console.error); }
-
-        /* STATUS */
-        function updateStatus() {
-            const anzeige = document.getElementById('status-anzeige');
-            if (navigator.onLine) { anzeige.innerText = "● Online"; anzeige.className = "status-online"; } 
-            else { anzeige.innerText = "○ Offline"; anzeige.className = "status-offline"; }
+        // --- FUNKTION ZUM WECHSELN VOM START-SCREEN ZUM SPIEL ---
+        window.startGame = function() {
+            document.getElementById('start-screen').style.display = 'none'; // Start weg
+            document.getElementById('game-view').style.display = 'flex';    // Spiel her
+            // Canvas neu fokussieren für Tastatureingaben
+            setTimeout(() => window.changeDirection({keyCode: 0}), 100); 
+            initGame(); // Snake starten
         }
-        window.addEventListener('online', updateStatus);
-        window.addEventListener('offline', updateStatus);
-        updateStatus();
 
-        /* --- FIREBASE LEADERBOARD LOGIK --- */
+        // --- DER REST DEINES SPIEL-CODES (Highscore laden, Snake Logik) ---
         
         async function loadLeaderboard() {
-            // Checken ob Firebase schon geladen ist (Module brauchen kurz)
-            if(!window.db) {
-                setTimeout(loadLeaderboard, 500); // Versuch es in 0.5s nochmal
-                return;
-            }
-
             const tbody = document.getElementById('leaderboard-body');
-            
             try {
-                // Die Datenbank fragen: Gib mir Scores, sortiert nach Score (absteigend), maximal 10
-                const q = window.query(window.collection(window.db, "scores"), window.orderBy("score", "desc"), window.limit(10));
-                const querySnapshot = await window.getDocs(q);
-                
-                tbody.innerHTML = ""; // Tabelle leeren
-
-                //NEU: Zähler bei 1 starten
+                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                tbody.innerHTML = "";
                 let rank = 1;
-
                 querySnapshot.forEach((doc) => {
                     const entry = doc.data();
-                    let row = `<tr>
-                        <td>${rank}.</td>
-                        <td>${entry.name}</td>
-                        <td>${entry.score}</td>
-                        <td>${entry.date}</td>
-                    </tr>`;
-
+                    let row = `<tr><td>${rank}.</td><td>${entry.name}</td><td>${entry.score}</td><td>${entry.date}</td></tr>`;
                     tbody.innerHTML += row;
-
-                    // NEU: Zähler hochzählen
                     rank++;
                 });
-
-                if(querySnapshot.empty) {
-                    // NEU: colspan auf 4 angepasst
-                    tbody.innerHTML = "<tr><td colspan='4'>Noch keine Scores. Sei der Erste!</td></tr>";
-                }
-
-            } catch (error) {
-                console.error("Fehler beim Laden:", error);
-                //NEU: colspan auf 4 angepasst
-                tbody.innerHTML = "<tr><td colspan='4' style='color:red'>Fehler: Offline oder Datenbank gesperrt</td></tr>";
-            }
+                if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='4'>Noch keine Scores.</td></tr>";
+            } catch (e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>Fehler beim Laden</td></tr>"; }
         }
 
-        async function saveScoreToCloud(name, points) {
-            if(!window.db) return; // Falls offline/Fehler
-            
+        async function saveScore(points) {
             try {
-                let date = new Date().toLocaleDateString('de-DE');
-                
-                // In die Cloud speichern
-                await window.addDoc(window.collection(window.db, "scores"), {
-                    name: name,
-                    score: points,
-                    date: date
-                });
-                
-                // Tabelle neu laden
+                // WICHTIG: Hier wird jetzt der automatische "playerName" verwendet
+                await addDoc(collection(db, "scores"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
                 loadLeaderboard();
-                
-            } catch (e) {
-                console.error("Konnte Score nicht speichern: ", e);
-                alert("Du bist offline! Score konnte nicht hochgeladen werden.");
-            }
+            } catch (e) { console.error("Save error", e); }
         }
 
-
-        /* --- GAME LOGIK (fast unverändert) --- */
+        /* GAME LOGIK */
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         let box = 20;
@@ -209,31 +167,10 @@
         let score = 0;
         let d;
         let game;
-        let playerName = "";
-
-        function startGame() {
-            let inputName = document.getElementById('playerName').value;
-            if(inputName.trim() === "") { alert("Bitte Namen eingeben!"); return; }
-            playerName = inputName;
-            document.getElementById('displayName').innerText = playerName;
-            document.getElementById('start-view').classList.remove('active');
-            document.getElementById('game-view').classList.add('active');
-            initGame();
-        }
-
-        function abortGame() {
-            clearInterval(game);
-            document.getElementById('game-view').classList.remove('active');
-            document.getElementById('start-view').classList.add('active');
-            loadLeaderboard(); // Tabelle aktualisieren beim Zurückgehen
-        }
 
         function initGame() {
-            snake = [];
-            snake[0] = { x: 9 * box, y: 10 * box };
-            score = 0;
-            d = undefined;
-            createFood();
+            snake = []; snake[0] = { x: 9 * box, y: 10 * box };
+            score = 0; d = undefined; createFood();
             if(game) clearInterval(game);
             game = setInterval(draw, 100);
         }
@@ -251,10 +188,7 @@
             else if(key == 39 && d != "LEFT") d = "RIGHT";
             else if(key == 40 && d != "UP") d = "DOWN";
         }
-        function collision(head, array) {
-            for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; }
-            return false;
-        }
+        window.changeDirection = changeDirection; 
 
         function draw() {
             ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -265,25 +199,27 @@
             ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
             let snakeX = snake[0].x; let snakeY = snake[0].y;
             if(d == "LEFT") snakeX -= box; if(d == "UP") snakeY -= box; if(d == "RIGHT") snakeX += box; if(d == "DOWN") snakeY += box;
+            
             if(snakeX == food.x && snakeY == food.y) { score++; createFood(); } else { snake.pop(); }
+            
             let newHead = { x: snakeX, y: snakeY };
-
+            
+            // Kollision
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                
-                // GAME OVER - JETZT MIT CLOUD
                 clearInterval(game);
-                
-                // 1. In die Cloud speichern!
-                saveScoreToCloud(playerName, score);
-                
+                saveScore(score); // Speichert automatisch mit dem richtigen Namen
                 alert("Game Over! Score: " + score);
-                document.getElementById('game-view').classList.remove('active');
-                document.getElementById('start-view').classList.add('active');
+                
+                // Zurück zum Start-Screen nach Game Over
+                document.getElementById('game-view').style.display = 'none';
+                document.getElementById('start-screen').style.display = 'block';
                 return;
             }
             snake.unshift(newHead);
             document.getElementById("score").innerText = score;
         }
+        function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
     </script>
 </body>
+
 </html>
