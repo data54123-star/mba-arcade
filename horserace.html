@@ -13,6 +13,16 @@
         /* --- UI COMPONENTS --- */
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 10px 0; font-size: 1.5rem; text-align: center;}
         .highlight { color: #ffff00; font-weight: bold; }
+        
+        /* Neuer Home Button Style (wie in Lobby) */
+        .btn-home {
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-weight: bold;
+            margin-bottom: 20px; align-self: flex-start;
+            font-size: 1.2rem; text-decoration: none; display: inline-block;
+        }
+
         .btn { 
             background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
             cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
@@ -21,9 +31,6 @@
         .btn:hover { background: #00ff00; color: #000; }
         .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
         
-        .btn-danger { border-color: #ff0000; color: #ff0000; }
-        .btn-danger:hover { background: #ff0000; color: white; }
-
         input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
 
         /* --- VIEWS --- */
@@ -91,21 +98,33 @@
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-        /* --- BETTING --- */
+        /* --- BETTING (NEUES DESIGN) --- */
         .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        
         .bet-option { 
-            border: 2px solid #444; padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
+            /* Heller Hintergrund damit man Schwarz sieht */
+            background: #e0e0e0; 
+            border: 2px solid #999; 
+            padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
             transition: transform 0.2s;
+            color: #000; /* Immer schwarz als Grundfarbe */
+            box-shadow: 0 0 5px rgba(255,255,255,0.1);
         }
-        .bet-option:hover { transform: scale(1.1); }
-        .bet-option.selected { border-color: #00ff00; background: #222; box-shadow: 0 0 10px #00ff00; }
+        .bet-option:hover { transform: scale(1.1); background: #fff; }
+        .bet-option.selected { 
+            border-color: #00ff00; 
+            background: #fff; 
+            box-shadow: 0 0 15px #00ff00; 
+            transform: scale(1.1); 
+        }
 
     </style>
 </head>
 <body>
 
     <div id="view-start" class="view active">
-        <button onclick="window.location.href='lobby.html'" style="align-self: flex-start; margin-bottom: 20px;" class="btn btn-danger">🏠 ZURÜCK</button>
+        <button onclick="window.location.href='lobby.html'" class="btn-home">🏠</button>
+        
         <h1>🐎 MULTIPLAYER DERBY</h1>
         <p>Erstelle eine Runde oder tritt bei.</p>
         
@@ -138,7 +157,7 @@
 
         <div id="host-controls" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; width: 100%; display: none;">
             <p class="highlight">👑 DU BIST DER HOST</p>
-            <p style="font-size: 0.8rem; color: #aaa;">Warte, bis alle gewettet haben.</p>
+            <p id="host-status-msg" style="font-size: 0.9rem; color: #aaa;">Warte auf Einsätze...</p>
             <button class="btn" id="btn-start-game" onclick="hostStartGame()" disabled>RENNEN STARTEN</button>
         </div>
     </div>
@@ -174,7 +193,7 @@
         import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- FIREBASE CONFIG ---
+        // --- HIER DEINE FIREBASE CONFIG EINFÜGEN ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -182,7 +201,7 @@
             storageBucket: "mba-arcade.firebasestorage.app",
             messagingSenderId: "497628563783",
             appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
-            // ... HIER DEINE CONFIG EINFÜGEN ...
+             // ... deine Config ...
         };
 
         const app = initializeApp(firebaseConfig);
@@ -232,7 +251,6 @@
 
         window.createNewLobby = async function() {
             const playerName = currentUser.email.replace("@mba-arcade.com", "");
-            // Wir nutzen den localStorage Avatar, falls vorhanden
             const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
 
             const lobbyData = {
@@ -258,59 +276,45 @@
         window.joinLobby = async function(lobbyId) {
             currentLobbyId = lobbyId;
             const playerName = currentUser.email.replace("@mba-arcade.com", "");
-            const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
-
-            // Check ob schon drin (beim Erstellen ja), sonst adden
-            const lobbyRef = doc(db, "lobbies", lobbyId);
             
             // UI Wechsel
             document.getElementById('view-start').classList.remove('active');
             document.getElementById('view-lobby').classList.add('active');
 
             // Listener starten
+            const lobbyRef = doc(db, "lobbies", lobbyId);
             lobbyUnsubscribe = onSnapshot(lobbyRef, (docSnap) => {
                 if(!docSnap.exists()) { alert("Lobby geschlossen"); window.location.reload(); return; }
                 const data = docSnap.data();
                 renderLobbyRoom(data);
             });
-
-            // Wenn ich NICHT der Host bin und neu beitrete, füge mich hinzu
-            // (Einfacher Check: bin ich schon im array?)
-            // Hinweis: Um Race Conditions zu vermeiden, nutzt man eigentlich Transactions. 
-            // Für Arcade reicht arrayUnion.
-            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", lobbyId))); 
-            // Kleiner Hack um an die Daten zu kommen ohne await im onSnapshot
-            // Aber wir machen es sauberer: Host checken.
-            
-            // Wir updaten einfach das Player Array via arrayUnion, wenn wir joinen
-            // Das klappt nur, wenn wir noch nicht drin sind.
-            // Aber Achtung: arrayUnion mit Objekten muss EXAKT matchen. Daher schwierig.
-            // Wir lesen das Doc, prüfen ob UID drin ist, wenn nein -> update.
         }
 
         function renderLobbyRoom(data) {
+            // Check ob ich schon in der Spielerliste bin
             const me = data.players.find(p => p.uid === currentUser.uid);
+            
             if(!me) {
-                // Ich bin noch nicht drin -> Eintragen!
+                // Wenn nicht, füge mich hinzu
                 const playerName = currentUser.email.replace("@mba-arcade.com", "");
                 const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
                 const newPlayer = { uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false };
                 updateDoc(doc(db, "lobbies", currentLobbyId), {
                     players: arrayUnion(newPlayer)
                 });
-                return; // Nächster Snapshot hat mich dann
+                return; // Warte auf nächsten Snapshot
             }
 
             isHost = (data.hostId === currentUser.uid);
             
-            // Player Liste
+            // Player Liste rendern
             const list = document.getElementById('lobby-players');
             list.innerHTML = "";
-            let allReady = true;
+            let readyCount = 0;
 
             data.players.forEach(p => {
-                const status = p.ready ? `<span style="color:#00ff00">Gewettet (${p.betAmount}) auf ${p.betSuit}</span>` : `<span style="color:#888">Wettet...</span>`;
-                if(!p.ready) allReady = false;
+                if(p.ready) readyCount++;
+                const status = p.ready ? `<span style="color:#00ff00">Bereit (${p.betAmount} auf ${p.betSuit})</span>` : `<span style="color:#888">Wettet...</span>`;
                 
                 list.innerHTML += `
                     <div class="player-chip">
@@ -327,10 +331,25 @@
             if(isHost) {
                 document.getElementById('host-controls').style.display = 'block';
                 const startBtn = document.getElementById('btn-start-game');
-                startBtn.disabled = !allReady || data.players.length < 1; // Zum Testen ab 1 Spieler
+                const statusMsg = document.getElementById('host-status-msg');
+                
+                // START BEDINGUNG:
+                // Alle anwesenden Spieler müssen 'ready' sein. 
+                // Es ist egal ob es 2, 3 oder 4 Spieler sind.
+                const allPlayersReady = (data.players.length > 0) && (readyCount === data.players.length);
+                
+                startBtn.disabled = !allPlayersReady;
+                
+                if(!allPlayersReady) {
+                    statusMsg.innerText = `Warte auf Einsätze: ${readyCount} / ${data.players.length} bereit...`;
+                    statusMsg.style.color = "#aaa";
+                } else {
+                    statusMsg.innerText = "Alle bereit! Start möglich.";
+                    statusMsg.style.color = "#00ff00";
+                }
             }
 
-            // Betting UI sperren wenn ready
+            // Betting UI verstecken wenn ich schon ready bin
             if(me.ready) {
                 document.getElementById('betting-controls').style.display = 'none';
             }
@@ -348,7 +367,6 @@
         window.selectBet = function(suit) {
             myBetSuit = suit;
             document.querySelectorAll('.bet-option').forEach(el => el.classList.remove('selected'));
-            // Finde das angeklickte Element (etwas hacky via Text)
             const options = document.querySelectorAll('.bet-option');
             options.forEach(opt => { if(opt.innerText.includes(suit)) opt.classList.add('selected'); });
         }
@@ -357,34 +375,10 @@
             const amount = parseInt(document.getElementById('bet-amount').value);
             if(!myBetSuit || amount <= 0 || amount > 1000) { alert("Bitte Pferd und Einsatz wählen!"); return; }
 
-            // Hole aktuelle Lobby, finde meinen Index und update
-            // Firestore Array Update ist tricky. Wir lesen das ganze Array, ändern es und schreiben zurück.
-            // Transaction wäre besser, aber wir machen es "Arcade Style".
-            
-            // Erstmal Coins abziehen (wir vertrauen dem Client hier der Einfachheit halber)
-            // oder wir machen das beim Ende. Prompt sagt: "Am Anfang setzen".
-            // Besser: Wir ziehen es erst am Ende ab/drauf, damit wir nicht bei Disconnect Coins verlieren.
-            // Aber Regel war: Platz 4 = -2x Einsatz. Also Risiko.
-            
-            // Wir speichern einfach die Wette im Lobby-Doc.
-            const lobbyRef = doc(db, "lobbies", currentLobbyId);
-            // Leider können wir in Firestore Arrays nicht partiell updaten.
-            // Wir müssen das ganze Array neu schreiben.
-            // Da wir im Listener sind, haben wir keine "lokalen" Daten, die sicher aktuell sind.
-            // Wir machen eine kleine Transaction.
-            
-            // Wir tricksen: Wir laden das Doc einmal frisch.
-            // (In einer echten App würde man `runTransaction` nutzen).
-            // Hier einfacher Weg:
-            // Wir triggern eine Cloud Function ODER machen es optimistisch.
-            // Ich schreibe eine Hilfsfunktion, die das Array holt und patcht.
-            
-            // Um es einfach zu halten: Ich hole das Doc im Snapshot, aber ich kann nicht "in" den Snapshot schreiben.
-            // Ich nehme an, dass keine 2 Leute millisekundengenau gleichzeitig wetten.
-            
-            // Workaround:
+            // Umweg über Snapshot Update (Transaction wäre sauberer, aber dies reicht für Arcade)
             const lobbyDoc = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = lobbyDoc.docs[0].data();
+            
             const newPlayers = data.players.map(p => {
                 if(p.uid === currentUser.uid) {
                     return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
@@ -392,24 +386,21 @@
                 return p;
             });
             
-            await updateDoc(lobbyRef, { players: newPlayers });
+            await updateDoc(doc(db, "lobbies", currentLobbyId), { players: newPlayers });
         }
 
         // --- HOST GAME LOGIC ---
         window.hostStartGame = async function() {
-            // Initialisiere Deck und Grid
             const deck = createDeck();
-            // Penalty Cards: Spalte 1 bis 7 (Indices) -> 7 Karten
             const penaltyCards = deck.splice(0, 7); 
-            // Positionen: 0
             const positions = { '♦': 0, '♥': 0, '♠': 0, '♣': 0 };
             
             const gameState = {
-                deck: deck, // Restdeck
-                penaltyCards: penaltyCards, // Die 7 Karten oben
+                deck: deck, 
+                penaltyCards: penaltyCards,
                 penaltyRevealed: [false, false, false, false, false, false, false],
                 positions: positions,
-                finishedOrder: [], // Wer kam wann ins Ziel?
+                finishedOrder: [], 
                 lastDrawnCard: null
             };
 
@@ -420,64 +411,43 @@
         }
 
         window.hostDrawCard = async function() {
-            // Holen wir den aktuellen State (um sicherzugehen) via Promise
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = snap.docs[0].data();
             const gs = data.gameState;
 
-            if(gs.deck.length === 0) return; // Sollte nicht passieren
+            if(gs.deck.length === 0) return; 
 
             const card = gs.deck.pop();
             gs.lastDrawnCard = card;
 
-            // 1. BEWEGUNG VORWÄRTS
+            // 1. BEWEGUNG
             if(!gs.finishedOrder.includes(card.suit)) {
                 gs.positions[card.suit]++;
             }
 
-            // 2. CHECK FINISH
-            // Grid ist 0..8. Ziel ist > 8? Oder ist 8 das Ziel?
-            // "Zellen 2 bis 8 (Indizes 1-7) sind Penalty. Zelle 9 (Index 8) ist Ziel."
-            // Also Grid Index 0 = Start. 1..7 = Feld. 8 = Ziel.
-            // Wenn Position == 8, ist er im Ziel.
+            // 2. CHECK FINISH (Grid Index 8 = Ziel)
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
-                gs.positions[card.suit] = 8; // Cap at Goal
+                gs.positions[card.suit] = 8; 
             }
 
             // 3. PENALTY CHECK
-            // "Diese Karten werden umgedreht, wenn alle Asse die Spalte passiert haben."
-            // Wir müssen prüfen: Min(Position aller NOCH NICHT IM ZIEL befindlichen Asse) > PenaltyIndex?
-            // Oder müssen ALLE (auch die im Ziel) drüber sein? Ja.
-            // Also: Min(Position ALLER Asse) > ColumnIndex.
-            
-            // Penalty Columns sind Index 1 bis 7. (Im Array index 0 bis 6).
-            // Grid Spalte 1 = Penalty Karte 0.
-            // Regel: Karte 0 wird umgedreht, wenn MinPos > 1.
-            
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
             
-            // Check alle Penalty Cards
             for(let i=0; i<7; i++) {
-                // i ist Index im PenaltyArray. Die Grid-Spalte dazu ist i+1.
-                // Wenn MinPos > i+1, haben alle die Spalte verlassen.
+                // i ist Index im PenaltyArray. Die Grid-Spalte ist i+1.
+                // Wenn das letzte Pferd (minPos) über i+1 ist:
                 if(minPos > (i+1) && !gs.penaltyRevealed[i]) {
-                    // AUFDECKEN!
                     gs.penaltyRevealed[i] = true;
                     const pCard = gs.penaltyCards[i];
                     
-                    // STRAFE: Ass gleicher Farbe muss 1 zurück
-                    // "Herz-Ass muss nur einmal eine Zelle horizontal nach links."
-                    // Check ob das Ass schon im Ziel ist?
-                    // Wenn es im Ziel ist, ist es sicher? "Wenn alle Asse das Ziel erreicht haben ist vorbei."
-                    // Normalerweise: Ja, auch aus dem Ziel kann man zurückgeschubst werden (extra gemein).
-                    // Wir machen es so: Zurückschubsen ist erlaubt, solange Spiel nicht vorbei.
-                    
-                    if(gs.finishedOrder.includes(pCard.suit)) {
-                        // Aus Finish Array entfernen!
-                        gs.finishedOrder = gs.finishedOrder.filter(s => s !== pCard.suit);
-                    }
-                    gs.positions[pCard.suit]--;
+                    // Ass gleicher Farbe muss 1 zurück, falls nicht finished
+                    if(!gs.finishedOrder.includes(pCard.suit)) {
+                        gs.positions[pCard.suit]--;
+                    } 
+                    // Variante: Auch aus dem Ziel zurück? Du sagtest "nein" wenn Spiel vorbei, 
+                    // aber solange Spiel läuft, kann man theoretisch rausfliegen? 
+                    // Wir lassen finished Pferde sicher im Stall für weniger Frust.
                 }
             }
 
@@ -485,8 +455,8 @@
             let newState = 'racing';
             if(gs.finishedOrder.length === 4) {
                 newState = 'finished';
-                calculateResults(data.players, gs.finishedOrder); // Ruft Funktion auf, die DB updated
-                return; // calculateResults macht das Update
+                calculateResults(data.players, gs.finishedOrder); 
+                return; 
             }
 
             await updateDoc(doc(db, "lobbies", currentLobbyId), {
@@ -514,9 +484,7 @@
             container.innerHTML = "";
 
             // ZEILE 0: Penalty Cards
-            // Zelle 0 leer
             container.innerHTML += `<div class="cell"></div>`;
-            // Penalty Cards 0..6
             for(let i=0; i<7; i++) {
                 let content = "";
                 if(gs.penaltyRevealed[i]) {
@@ -528,7 +496,6 @@
                 }
                 container.innerHTML += `<div class="cell cell-penalty">${content}</div>`;
             }
-            // Ziel Zelle oben leer
             container.innerHTML += `<div class="cell"></div>`;
 
             // ZEILEN 1-4: PFERDE
@@ -537,19 +504,13 @@
                 const pos = gs.positions[suit];
                 const color = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
                 
-                // Start Zelle (Index 0)
-                let startContent = ""; // Ass startet hier, aber wenn pos > 0 ist es weg
-                // Wir rendern einfach 9 Zellen (0..8).
-                
                 for(let i=0; i<=8; i++) {
                     let cellClass = "cell";
                     if(i === 8) cellClass += " cell-goal";
-                    
                     let content = "";
                     if(pos === i) {
                         content = `<div class="card ${color}" style="transform: scale(0.9);">${suit}A</div>`;
                     }
-                    
                     container.innerHTML += `<div class="${cellClass}">${content}</div>`;
                 }
             });
@@ -558,7 +519,6 @@
         function renderLastCard(card) {
             const div = document.getElementById('drawn-card-display');
             if(!card) { div.innerHTML = ""; return; }
-            
             const color = (card.suit === '♥' || card.suit === '♦') ? 'suit-red' : 'suit-black';
             div.innerHTML = `
                 <div class="card last-card-anim ${color}">
@@ -568,38 +528,17 @@
             `;
         }
 
-        // --- RESULTS & PAYOUT ---
+        // --- RESULTS ---
         async function calculateResults(players, finishedOrder) {
-            // finishedOrder = ['♥', '♠', '♦', '♣'] (1. bis 4.)
-            
-            // Wir müssen die Coins updaten. Da dies der Host macht, 
-            // haben wir das "Recht" dazu (Client Side Trust für dieses Beispiel).
-            
             const updatedPlayers = players.map(p => {
-                const rankIndex = finishedOrder.indexOf(p.betSuit); // 0 = 1. Platz
+                const rankIndex = finishedOrder.indexOf(p.betSuit); 
                 let resultText = "";
                 let profit = 0;
-                
-                // Abrechnung nach deinen Regeln:
-                // Rank 0 (1. Platz): Verdoppelt -> Gewinn = Einsatz. (Wallet = Start + Gewinn)
-                // Rank 1 (2. Platz): Gleich -> Gewinn = 0.
-                // Rank 2 (3. Platz): Negativ -> Gewinn = -Einsatz.
-                // Rank 3 (4. Platz): Verdoppelt Negativ -> Gewinn = -2 * Einsatz.
                 
                 if(rankIndex === 0) { profit = p.betAmount; resultText = "GEWINN (x2)"; }
                 else if(rankIndex === 1) { profit = 0; resultText = "Rückerstattung"; }
                 else if(rankIndex === 2) { profit = -p.betAmount; resultText = "VERLOREN"; }
                 else if(rankIndex === 3) { profit = -2 * p.betAmount; resultText = "TOTALSCHADEN (-2x)"; }
-                else {
-                    // Fallback falls Spiel abbrach oder Bug
-                    profit = 0; resultText = "Neutral";
-                }
-
-                // Global Score Update (Feuer & Vergessen)
-                // Achtung: Wir können nicht für andere User in 'scores' schreiben ohne Auth? 
-                // Doch, Firebase Rules erlauben meist write if auth != null.
-                // Wir speichern das Ergebnis im Lobby-Objekt und jeder Client updated sein eigenes Wallet lokal/DB?
-                // Besser: Wir speichern "payout" im Lobby Doc und der Client (renderLobby) führt das Update aus.
                 
                 return { ...p, payout: profit, resultText: resultText, rank: rankIndex + 1 };
             });
@@ -617,7 +556,6 @@
             const list = document.getElementById('result-list');
             list.innerHTML = "";
             
-            // Zeige erst die Pferde-Reihenfolge
             const order = data.gameState.finishedOrder;
             let html = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #444; border-radius: 5px;">
                 <h3>Einlauf</h3>
@@ -629,14 +567,12 @@
                 </div>
             </div>`;
 
-            // Zeige Spieler Ergebnisse
             html += "<h3>Spieler Bilanz</h3>";
             data.players.forEach(p => {
                 let color = "#fff";
                 if(p.payout > 0) color = "#00ff00";
                 if(p.payout < 0) color = "#ff0000";
                 
-                // Speziell: Zeige mein Ergebnis fett
                 const isMe = (p.uid === currentUser.uid);
                 const style = isMe ? "border: 2px solid #fff; background: #222;" : "border-bottom: 1px solid #333;";
                 
@@ -652,51 +588,12 @@
                         </div>
                     </div>
                 `;
-
-                // WICHTIG: Wenn ich das bin und das Spiel gerade erst finished ist, update mein Wallet!
-                // Wir machen das über localStorage Check, damit es nicht bei jedem Reload passiert.
-                if(isMe && !localStorage.getItem(`paid_${currentLobbyId}`)) {
-                    // Update Global Wallet? 
-                    // Das fehlt hier noch im Detail. Wir zeigen es nur an.
-                    // Für Arcade-Feeling: "Score in DB speichern"
-                    if(p.payout !== 0) {
-                        saveWalletUpdate(p.payout);
-                    }
-                    localStorage.setItem(`paid_${currentLobbyId}`, "true");
-                }
             });
-            
             list.innerHTML = html;
-        }
-
-        async function saveWalletUpdate(amount) {
-            // Hier müssten wir eigentlich das User-Dokument updaten.
-            // Da wir noch kein zentrales "Wallet"-Dokument pro User haben, 
-            // sondern den Score nur im Spiel halten, simulieren wir das oder schreiben in Highscores.
-            // Wir speichern einfach einen "Transaction" Record.
-            try {
-                const playerName = currentUser.email.replace("@mba-arcade.com", "");
-                await addDoc(collection(db, "transactions"), { 
-                    name: playerName, 
-                    amount: amount, 
-                    date: new Date(),
-                    game: "HorseRace"
-                });
-            } catch(e) { console.error(e); }
         }
 
         // --- HELPER: DECK ---
         function createDeck() {
-            // Skat Deck ohne Asse (die sind ja die Läufer)
-            // ABER: In diesem Spiel (Derby) werden die Karten gezogen, um zu laufen.
-            // Also brauchen wir ein volles Deck (32 Karten). 
-            // Wenn ein Ass gezogen wird, läuft das Ass? Ja.
-            // ODER: Wir nehmen ein 2. Deck zum Ziehen? 
-            // Üblicherweise: Man nimmt ein Deck. Die 4 Asse werden rausgenommen und aufs Feld gelegt.
-            // Verbleibend: 28 Karten.
-            // Aus diesen 28 Karten nehmen wir 7 für die Penalty-Reihe.
-            // Verbleibend: 21 Karten zum Ziehen.
-            
             const suits = ['♦', '♥', '♠', '♣'];
             const values = ['7', '8', '9', '10', 'B', 'D', 'K']; 
             let newDeck = [];
@@ -705,14 +602,12 @@
                     newDeck.push({ suit: s, value: v });
                 }
             }
-            // Mischen
             for (let i = newDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
             }
             return newDeck;
         }
-
     </script>
 </body>
 </html>
