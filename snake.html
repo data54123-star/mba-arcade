@@ -4,35 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBA Snake Global</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
     <style>
-        /* --- CSS BLEIBT IDENTISCH --- */
-        body { background-color: #000; color: #fff; font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; touch-action: manipulation; position: relative; }
-        #status-anzeige { position: absolute; top: 20px; right: 20px; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; z-index: 1000; transition: all 0.3s ease; }
-        .status-online { background-color: rgba(0, 255, 0, 0.2); border: 1px solid #00ff00; color: #00ff00; }
-        .status-offline { background-color: rgba(255, 50, 50, 0.2); border: 1px solid #ff4444; color: #ff4444; }
-        .view { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; }
-        .active { display: flex; }
-        .start-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 50px; width: 100%; align-items: flex-start; }
-        .start-left, .start-right { flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; }
-        .input-group { margin: 20px 0; text-align: center; }
-        input { padding: 10px; font-size: 1.2rem; background: #222; border: 2px solid #808080; color: white; text-align: center; width: 200px; }
-        button.start-btn { padding: 15px 30px; font-size: 1.5rem; background: #000; color: #00ff00; border: 2px solid #808080; cursor: pointer; margin-top: 20px; }
-        button.start-btn:hover { background: #222; }
-        table { border-collapse: collapse; width: 100%; max-width: 400px; border: 1px solid #808080; color: white; }
-        th, td { border: 1px solid #444; padding: 8px; text-align: center; }
-        th { background-color: #222; color: #00ff00; }
-        tr:nth-child(even) { background-color: #111; }
-        #game-info { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 10px; border-bottom: 2px solid #808080; padding-bottom: 5px; }
-        canvas { border: 4px solid #808080; background-color: #111; max-width: 95vw; }
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            touch-action: manipulation; 
+            position: relative; 
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT CONTAINER (NEU) --- */
+        .main-layout {
+            display: flex;
+            flex-wrap: wrap; /* Damit es auf Handys untereinander rutscht */
+            justify-content: center;
+            align-items: flex-start;
+            gap: 50px;
+            margin-top: 80px; /* Platz für den Home Button */
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .left-column {
+            flex: 1;
+            min-width: 300px; /* Mindestbreite */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .right-column {
+            width: 350px; /* Feste Breite für die Tabelle */
+            min-width: 300px;
+        }
+
+        /* --- TABELLEN DESIGN (NEU GESTYLT) --- */
+        .highscore-box {
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 15px;
+            background: #111;
+            box-shadow: 0 0 20px rgba(0,255,0,0.1);
+        }
+
+        table { border-collapse: collapse; width: 100%; color: white; }
+        th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
+        th { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 15px; text-transform: uppercase; }
+        tr:last-child td { border-bottom: none; }
+
+        /* --- SPIEL ELEMENTE --- */
+        canvas { border: 4px solid #808080; background-color: #111; max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        
         .controls { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px; margin-top: 20px; }
         .ctrl-btn { width: 60px; height: 60px; background: #333; border: 2px solid #808080; color: white; font-size: 1.5rem; border-radius: 10px; cursor: pointer; user-select: none; }
-        .up { grid-column: 2; grid-row: 1; }
-        .left { grid-column: 1; grid-row: 2; }
-        .down { grid-column: 2; grid-row: 2; }
-        .right { grid-column: 3; grid-row: 2; }
-        @media (max-width: 1200px) { .ctrl-btn { width: 70px; height: 70px; } .start-container { flex-direction: column; align-items: center; } .start-right { width: 90%; } }
+        .up { grid-column: 2; grid-row: 1; } .left { grid-column: 1; grid-row: 2; } .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .highlight { color: #00ff00; font-weight: bold; }
+        
+        /* Handy Anpassung */
+        @media (max-width: 800px) {
+            .main-layout { flex-direction: column; align-items: center; }
+            .right-column { width: 100%; order: 2; } /* Tabelle nach unten auf Handys */
+            .left-column { width: 100%; order: 1; }
+        }
     </style>
 </head>
 <body>
@@ -45,39 +89,60 @@
         🏠 HOME
     </button>
 
-    <div id="start-screen" class="view active" style="text-align: center; margin-top: 50px;">
-        <h1 style="color: #00ff00; font-size: 3rem; text-shadow: 0 0 20px rgba(0,255,0,0.5);">MBA SNAKE</h1>
+    <div class="main-layout">
         
-        <h2 id="welcome-msg" style="color: white;">Lade Profil...</h2>
-        
-        <button onclick="startGame()" style="
-            margin-top: 30px; padding: 20px 40px; font-size: 1.5rem; 
-            background: #000; color: #00ff00; border: 2px solid #00ff00; 
-            cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
-            box-shadow: 0 0 15px rgba(0,255,0,0.3);">
-            SPIEL STARTEN
-        </button>
-    </div>
+        <div class="left-column">
+            
+            <div id="start-screen" style="text-align: center; padding: 40px 0;">
+                <h1 style="color: #00ff00; font-size: 3.5rem; text-shadow: 0 0 20px rgba(0,255,0,0.5); margin: 0;">MBA SNAKE</h1>
+                <p style="color: #888; margin-top: -10px; letter-spacing: 2px;">GLOBAL EDITION</p>
+                
+                <h2 id="welcome-msg" style="color: white; margin-top: 40px; font-size: 1.5rem;">Lade Profil...</h2>
+                
+                <button onclick="startGame()" style="
+                    margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; 
+                    background: #000; color: #00ff00; border: 2px solid #00ff00; 
+                    cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
+                    box-shadow: 0 0 15px rgba(0,255,0,0.3); transition: all 0.2s;">
+                    SPIEL STARTEN
+                </button>
+            </div>
 
-    <div id="game-view" class="view" style="display: none;"> <h2 style="color:#00ff00">GLOBAL TOP 10</h2>
-        <table>
-            <thead><tr><th>#</th><th>Name</th><th>Score</th><th>Datum</th></tr></thead>
-            <tbody id="leaderboard-body"><tr><td colspan="4">Lade Daten...</td></tr></tbody>
-        </table>
+            <div id="game-view" class="hidden" style="display: flex; flex-direction: column; align-items: center;">
+                <div id="game-info" style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1.2rem; font-weight: bold;">
+                    <span id="displayName">Spieler: ...</span>
+                    <span>Score: <span id="score" class="highlight">0</span></span>
+                </div>
 
-        <div id="game-info">
-            <span id="displayName">Spieler: ...</span>
-            <span>Score: <span id="score">0</span></span>
+                <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+                <div class="controls">
+                    <button class="ctrl-btn up" onclick="changeDirection({keyCode: 38})">▲</button>
+                    <button class="ctrl-btn left" onclick="changeDirection({keyCode: 37})">◀</button>
+                    <button class="ctrl-btn down" onclick="changeDirection({keyCode: 40})">▼</button>
+                    <button class="ctrl-btn right" onclick="changeDirection({keyCode: 39})">▶</button>
+                </div>
+            </div>
         </div>
 
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-
-        <div class="controls">
-            <button class="ctrl-btn up" onclick="changeDirection({keyCode: 38})">▲</button>
-            <button class="ctrl-btn left" onclick="changeDirection({keyCode: 37})">◀</button>
-            <button class="ctrl-btn down" onclick="changeDirection({keyCode: 40})">▼</button>
-            <button class="ctrl-btn right" onclick="changeDirection({keyCode: 39})">▶</button>
+        <div class="right-column">
+            <div class="highscore-box">
+                <h2 style="color:#00ff00; text-align: center; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">🏆 TOP 10</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">#</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr><td colspan="3">Lade Daten...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 
     <script type="module">
@@ -85,54 +150,36 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- DEINE CONFIG HIER EINFÜGEN ---
+        // --- WICHTIG: HIER WIEDER DEINE CONFIG EINFÜGEN! ---
         const firebaseConfig = {
-            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
-            authDomain: "mba-arcade.firebaseapp.com",
-            projectId: "mba-arcade",
-            storageBucket: "mba-arcade.firebasestorage.app",
-            messagingSenderId: "497628563783",
-            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
-            // ... hier wieder deinen Block einfügen ...
+            // ... dein Code ...
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        let playerName = "Gast"; // Standardwert, falls was schiefgeht
+        let playerName = "Gast";
 
-        // --- AUTOMATISCHER LOGIN CHECK ---
+        // --- LOGIN & LADEN ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Hier passiert die Magie: Name aus der "Fake-Email" holen
                 playerName = user.email.replace("@mba-arcade.com", "");
-                
-                // Begrüßung auf dem Start-Screen
                 document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
-                
-                // Anzeige im Spiel
                 document.getElementById('displayName').innerText = "Spieler: " + playerName;
-                
-                // Highscore laden
                 loadLeaderboard();
             } else {
-                // Wenn keiner eingeloggt ist -> Zurück zum Login
                 window.location.href = "index.html";
             }
         });
 
-        // --- FUNKTION ZUM WECHSELN VOM START-SCREEN ZUM SPIEL ---
         window.startGame = function() {
-            document.getElementById('start-screen').style.display = 'none'; // Start weg
-            document.getElementById('game-view').style.display = 'flex';    // Spiel her
-            // Canvas neu fokussieren für Tastatureingaben
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
             setTimeout(() => window.changeDirection({keyCode: 0}), 100); 
-            initGame(); // Snake starten
+            initGame();
         }
 
-        // --- DER REST DEINES SPIEL-CODES (Highscore laden, Snake Logik) ---
-        
         async function loadLeaderboard() {
             const tbody = document.getElementById('leaderboard-body');
             try {
@@ -142,23 +189,32 @@
                 let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const entry = doc.data();
-                    let row = `<tr><td>${rank}.</td><td>${entry.name}</td><td>${entry.score}</td><td>${entry.date}</td></tr>`;
+                    // Design: Rang 1, 2, 3 bekommen Medaillen
+                    let rankDisplay = rank + ".";
+                    if(rank === 1) rankDisplay = "🥇";
+                    if(rank === 2) rankDisplay = "🥈";
+                    if(rank === 3) rankDisplay = "🥉";
+
+                    let row = `<tr>
+                        <td>${rankDisplay}</td>
+                        <td style="text-align: left; padding-left: 20px;">${entry.name}</td>
+                        <td class="highlight">${entry.score}</td>
+                    </tr>`;
                     tbody.innerHTML += row;
                     rank++;
                 });
-                if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='4'>Noch keine Scores.</td></tr>";
-            } catch (e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>Fehler beim Laden</td></tr>"; }
+                if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='3'>Noch keine Scores.</td></tr>";
+            } catch (e) { console.error(e); tbody.innerHTML = "<tr><td colspan='3'>Fehler...</td></tr>"; }
         }
 
         async function saveScore(points) {
             try {
-                // WICHTIG: Hier wird jetzt der automatische "playerName" verwendet
                 await addDoc(collection(db, "scores"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
-                loadLeaderboard();
+                loadLeaderboard(); // Tabelle sofort aktualisieren
             } catch (e) { console.error("Save error", e); }
         }
 
-        /* GAME LOGIK */
+        /* --- SNAKE LOGIK (unverändert) --- */
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         let box = 20;
@@ -204,15 +260,13 @@
             
             let newHead = { x: snakeX, y: snakeY };
             
-            // Kollision
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(game);
-                saveScore(score); // Speichert automatisch mit dem richtigen Namen
+                saveScore(score);
                 alert("Game Over! Score: " + score);
-                
-                // Zurück zum Start-Screen nach Game Over
-                document.getElementById('game-view').style.display = 'none';
-                document.getElementById('start-screen').style.display = 'block';
+                // Reset Layout
+                document.getElementById('start-screen').classList.remove('hidden');
+                document.getElementById('game-view').classList.add('hidden');
                 return;
             }
             snake.unshift(newHead);
@@ -221,5 +275,4 @@
         function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
     </script>
 </body>
-
 </html>
