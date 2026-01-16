@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBA Arcade Login</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { background-color: #000; color: #00ff00; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { border: 2px solid #00ff00; padding: 40px; width: 300px; text-align: center; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); }
+        h1 { margin-bottom: 30px; text-transform: uppercase; letter-spacing: 3px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #111; border: 1px solid #005500; color: white; font-family: 'Courier New', monospace; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; margin-top: 20px; background: #000; color: #00ff00; border: 2px solid #00ff00; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        button:hover { background: #00ff00; color: #000; }
+        .toggle-text { margin-top: 20px; font-size: 0.8rem; color: #888; cursor: pointer; text-decoration: underline; }
+        #error-msg { color: red; margin-top: 10px; font-size: 0.8rem; min-height: 1.2em;}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 id="form-title">LOGIN</h1>
+        <input type="text" id="username" placeholder="Benutzername">
+        <input type="password" id="password" placeholder="Passwort">
+        <button onclick="handleAuth()" id="action-btn">EINLOGGEN</button>
+        <div id="error-msg"></div>
+        <p class="toggle-text" onclick="toggleMode()"><span id="toggle-info">Neu hier? Konto erstellen</span></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // --- HIER DEINE CONFIG EINFÜGEN ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.auth = auth;
+        window.signIn = signInWithEmailAndPassword;
+        window.signUp = createUserWithEmailAndPassword;
+    </script>
+
+    <script>
+        // Service Worker registrieren (damit die App installierbar wird)
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
+
+        let isLoginMode = true;
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                document.getElementById('form-title').innerText = "LOGIN";
+                document.getElementById('action-btn').innerText = "EINLOGGEN";
+                document.getElementById('toggle-info').innerText = "Neu hier? Konto erstellen";
+            } else {
+                document.getElementById('form-title').innerText = "REGISTER";
+                document.getElementById('action-btn').innerText = "REGISTRIEREN";
+                document.getElementById('toggle-info').innerText = "Zurück zum Login";
+            }
+            document.getElementById('error-msg').innerText = "";
+        }
+
+        async function handleAuth() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-msg');
+
+            if(!user || !pass) { errorDiv.innerText = "Bitte alles ausfüllen!"; return; }
+            const fakeEmail = user + "@mba-arcade.com"; // Wir basteln eine Fake-Email
+
+            try {
+                if(isLoginMode) {
+                    await window.signIn(window.auth, fakeEmail, pass);
+                } else {
+                    await window.signUp(window.auth, fakeEmail, pass);
+                }
+                localStorage.setItem('mbaUser', user); // Name merken
+                window.location.href = "lobby.html";   // Weiterleitung zur Lobby
+            } catch (error) {
+                console.error(error);
+                if(error.code === 'auth/invalid-credential') errorDiv.innerText = "Falsche Daten.";
+                else if (error.code === 'auth/email-already-in-use') errorDiv.innerText = "Name vergeben!";
+                else if (error.code === 'auth/weak-password') errorDiv.innerText = "Passwort zu kurz (min 6).";
+                else errorDiv.innerText = "Fehler: " + error.code;
+            }
+        }
+    </script>
+</body>
+</html>
