@@ -1,5 +1,4 @@
-// Wir gehen direkt auf v3, um sicherzugehen
-const CACHE_NAME = 'arcade-v3'; 
+const CACHE_NAME = 'arcade-v4'; 
 
 const urlsToCache = [
   './',
