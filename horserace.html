@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MBA Derby Multiplayer</title>
+    <style>
+        body { 
+            background-color: #050505; color: #fff; font-family: 'Courier New', monospace; 
+            margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+
+        /* --- UI COMPONENTS --- */
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 10px 0; font-size: 1.5rem; text-align: center;}
+        .highlight { color: #ffff00; font-weight: bold; }
+        .btn { 
+            background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
+            cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
+        
+        .btn-danger { border-color: #ff0000; color: #ff0000; }
+        .btn-danger:hover { background: #ff0000; color: white; }
+
+        input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
+
+        /* --- VIEWS --- */
+        .view { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
+        .view.active { display: flex; }
+
+        /* --- LOBBY LISTE --- */
+        .lobby-card { 
+            background: #1a1a1a; border: 1px solid #444; padding: 15px; margin: 10px 0; width: 100%; 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
+
+        /* --- WAITING ROOM --- */
+        .player-list { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 20px 0; }
+        .player-chip { 
+            background: #222; border: 1px solid #444; padding: 10px; text-align: center; border-radius: 5px; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
+
+        /* --- GAME GRID (THE RACE) --- */
+        #race-container {
+            width: 100%;
+            overflow-x: auto; /* Scrollen auf Handy */
+            padding-bottom: 20px;
+            margin-top: 20px;
+        }
+        
+        .race-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr) 60px; /* Start (Asse) | 7 Felder | Ziel */
+            grid-template-rows: 80px repeat(4, 60px); /* Penalty Zeile | 4 Pferde Zeilen */
+            gap: 5px;
+            min-width: 600px; /* Damit es nicht zu eng wird */
+            border: 2px solid #333;
+            padding: 10px;
+            background: #111;
+        }
+
+        .cell { border: 1px dashed #333; display: flex; justify-content: center; align-items: center; position: relative; }
+        .cell-penalty { border-bottom: 2px solid #ff0000; }
+        .cell-goal { background: repeating-linear-gradient(45deg, #222, #222 10px, #000 10px, #000 20px); border-left: 2px solid #fff; }
+
+        /* --- CARDS --- */
+        .card {
+            width: 40px; height: 56px; background: white; border-radius: 4px; color: black; 
+            font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1.2rem;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); user-select: none;
+        }
+        .card-back {
+            background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 5px, #d32f2f 5px, #d32f2f 10px);
+            border: 2px solid #fff;
+        }
+        .suit-red { color: #d32f2f; }
+        .suit-black { color: #000; }
+
+        /* --- CURRENT ACTION --- */
+        #action-area {
+            position: sticky; bottom: 0; background: rgba(0,0,0,0.9); width: 100%; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; border-top: 1px solid #333; z-index: 100;
+        }
+        .last-card-anim {
+            width: 60px; height: 84px; font-size: 1.5rem; margin-bottom: 10px; border: 4px solid #fff;
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+        /* --- BETTING --- */
+        .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .bet-option { 
+            border: 2px solid #444; padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
+            transition: transform 0.2s;
+        }
+        .bet-option:hover { transform: scale(1.1); }
+        .bet-option.selected { border-color: #00ff00; background: #222; box-shadow: 0 0 10px #00ff00; }
+
+    </style>
+</head>
+<body>
+
+    <div id="view-start" class="view active">
+        <button onclick="window.location.href='lobby.html'" style="align-self: flex-start; margin-bottom: 20px;" class="btn btn-danger">🏠 ZURÜCK</button>
+        <h1>🐎 MULTIPLAYER DERBY</h1>
+        <p>Erstelle eine Runde oder tritt bei.</p>
+        
+        <div style="width: 100%; margin: 20px 0;">
+            <h3>Offene Lobbys</h3>
+            <div id="lobby-list">Lade...</div>
+        </div>
+
+        <button class="btn" onclick="createNewLobby()">NEUE LOBBY ERSTELLEN</button>
+    </div>
+
+    <div id="view-lobby" class="view">
+        <h2 id="lobby-title">Lobby</h2>
+        <p>Warte auf Spieler... (<span id="player-count">0</span>)</p>
+
+        <div class="player-list" id="lobby-players"></div>
+
+        <div id="betting-controls" style="width: 100%; max-width: 500px; text-align: center;">
+            <h3>DEIN EINSATZ</h3>
+            <div class="bet-grid">
+                <div class="bet-option suit-red" onclick="selectBet('♦')">♦</div>
+                <div class="bet-option suit-red" onclick="selectBet('♥')">♥</div>
+                <div class="bet-option suit-black" onclick="selectBet('♠')">♠</div>
+                <div class="bet-option suit-black" onclick="selectBet('♣')">♣</div>
+            </div>
+            <input type="number" id="bet-amount" placeholder="Coins" value="100" min="10" max="1000">
+            <div style="margin-top: 10px; font-size: 0.8rem; color: #888;">Max. 1000 Coins</div>
+            <button class="btn" id="btn-lock-bet" onclick="lockInBet()" style="margin-top: 15px;">WETTE PLATZIEREN</button>
+        </div>
+
+        <div id="host-controls" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; width: 100%; display: none;">
+            <p class="highlight">👑 DU BIST DER HOST</p>
+            <p style="font-size: 0.8rem; color: #aaa;">Warte, bis alle gewettet haben.</p>
+            <button class="btn" id="btn-start-game" onclick="hostStartGame()" disabled>RENNEN STARTEN</button>
+        </div>
+    </div>
+
+    <div id="view-race" class="view">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <span>🏁 ZIEL: 8 Felder</span>
+            <span id="race-status">Rennen läuft...</span>
+        </div>
+
+        <div id="race-container">
+            <div id="grid-target" class="race-grid"></div>
+        </div>
+
+        <div id="action-area">
+            <div id="drawn-card-display"></div>
+            
+            <div id="host-game-controls" style="display: none; width: 100%;">
+                <button class="btn" onclick="hostDrawCard()" style="width: 100%; font-size: 1.2rem; padding: 15px;">KARTE ZIEHEN 🃏</button>
+            </div>
+            <div id="client-wait-msg" style="color: #888;">Warte auf Host...</div>
+        </div>
+    </div>
+
+    <div id="view-result" class="view">
+        <h1>ERGEBNIS</h1>
+        <div id="result-list" style="width: 100%; max-width: 600px;"></div>
+        <button class="btn" onclick="window.location.href='lobby.html'" style="margin-top: 20px;">ZURÜCK ZUR LOBBY</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+            // ... HIER DEINE CONFIG EINFÜGEN ...
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- GLOBAL STATE ---
+        let currentUser = null;
+        let currentLobbyId = null;
+        let lobbyUnsubscribe = null;
+        let isHost = false;
+        let myBetSuit = null;
+
+        // --- SETUP ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                loadLobbies();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // --- LOBBY LISTE ---
+        function loadLobbies() {
+            const q = query(collection(db, "lobbies"), where("state", "==", "waiting"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('lobby-list');
+                list.innerHTML = "";
+                if(snapshot.empty) list.innerHTML = "<p style='color:#888'>Keine offenen Lobbys.</p>";
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const playerCount = data.players ? data.players.length : 0;
+                    list.innerHTML += `
+                        <div class="lobby-card">
+                            <div>
+                                <strong>Host: ${data.hostName}</strong><br>
+                                <small>Spieler: ${playerCount}</small>
+                            </div>
+                            <button class="btn" style="width: auto;" onclick="joinLobby('${doc.id}')">BEITRETEN</button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.createNewLobby = async function() {
+            const playerName = currentUser.email.replace("@mba-arcade.com", "");
+            // Wir nutzen den localStorage Avatar, falls vorhanden
+            const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
+
+            const lobbyData = {
+                hostId: currentUser.uid,
+                hostName: playerName,
+                state: "waiting",
+                createdAt: new Date(),
+                players: [{
+                    uid: currentUser.uid,
+                    name: playerName,
+                    avatar: avatar,
+                    betAmount: 0,
+                    betSuit: null,
+                    ready: false
+                }],
+                gameState: null
+            };
+
+            const docRef = await addDoc(collection(db, "lobbies"), lobbyData);
+            joinLobby(docRef.id);
+        }
+
+        window.joinLobby = async function(lobbyId) {
+            currentLobbyId = lobbyId;
+            const playerName = currentUser.email.replace("@mba-arcade.com", "");
+            const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
+
+            // Check ob schon drin (beim Erstellen ja), sonst adden
+            const lobbyRef = doc(db, "lobbies", lobbyId);
+            
+            // UI Wechsel
+            document.getElementById('view-start').classList.remove('active');
+            document.getElementById('view-lobby').classList.add('active');
+
+            // Listener starten
+            lobbyUnsubscribe = onSnapshot(lobbyRef, (docSnap) => {
+                if(!docSnap.exists()) { alert("Lobby geschlossen"); window.location.reload(); return; }
+                const data = docSnap.data();
+                renderLobbyRoom(data);
+            });
+
+            // Wenn ich NICHT der Host bin und neu beitrete, füge mich hinzu
+            // (Einfacher Check: bin ich schon im array?)
+            // Hinweis: Um Race Conditions zu vermeiden, nutzt man eigentlich Transactions. 
+            // Für Arcade reicht arrayUnion.
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", lobbyId))); 
+            // Kleiner Hack um an die Daten zu kommen ohne await im onSnapshot
+            // Aber wir machen es sauberer: Host checken.
+            
+            // Wir updaten einfach das Player Array via arrayUnion, wenn wir joinen
+            // Das klappt nur, wenn wir noch nicht drin sind.
+            // Aber Achtung: arrayUnion mit Objekten muss EXAKT matchen. Daher schwierig.
+            // Wir lesen das Doc, prüfen ob UID drin ist, wenn nein -> update.
+        }
+
+        function renderLobbyRoom(data) {
+            const me = data.players.find(p => p.uid === currentUser.uid);
+            if(!me) {
+                // Ich bin noch nicht drin -> Eintragen!
+                const playerName = currentUser.email.replace("@mba-arcade.com", "");
+                const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
+                const newPlayer = { uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false };
+                updateDoc(doc(db, "lobbies", currentLobbyId), {
+                    players: arrayUnion(newPlayer)
+                });
+                return; // Nächster Snapshot hat mich dann
+            }
+
+            isHost = (data.hostId === currentUser.uid);
+            
+            // Player Liste
+            const list = document.getElementById('lobby-players');
+            list.innerHTML = "";
+            let allReady = true;
+
+            data.players.forEach(p => {
+                const status = p.ready ? `<span style="color:#00ff00">Gewettet (${p.betAmount}) auf ${p.betSuit}</span>` : `<span style="color:#888">Wettet...</span>`;
+                if(!p.ready) allReady = false;
+                
+                list.innerHTML += `
+                    <div class="player-chip">
+                        <img src="${p.avatar}" class="player-avatar">
+                        <strong>${p.name}</strong>
+                        <small>${status}</small>
+                    </div>
+                `;
+            });
+
+            document.getElementById('player-count').innerText = data.players.length;
+
+            // Host Controls
+            if(isHost) {
+                document.getElementById('host-controls').style.display = 'block';
+                const startBtn = document.getElementById('btn-start-game');
+                startBtn.disabled = !allReady || data.players.length < 1; // Zum Testen ab 1 Spieler
+            }
+
+            // Betting UI sperren wenn ready
+            if(me.ready) {
+                document.getElementById('betting-controls').style.display = 'none';
+            }
+
+            // Spielstart Check
+            if(data.state === 'racing') {
+                startGameClient(data);
+            }
+            if(data.state === 'finished') {
+                showResults(data);
+            }
+        }
+
+        // --- BETTING LOGIC ---
+        window.selectBet = function(suit) {
+            myBetSuit = suit;
+            document.querySelectorAll('.bet-option').forEach(el => el.classList.remove('selected'));
+            // Finde das angeklickte Element (etwas hacky via Text)
+            const options = document.querySelectorAll('.bet-option');
+            options.forEach(opt => { if(opt.innerText.includes(suit)) opt.classList.add('selected'); });
+        }
+
+        window.lockInBet = async function() {
+            const amount = parseInt(document.getElementById('bet-amount').value);
+            if(!myBetSuit || amount <= 0 || amount > 1000) { alert("Bitte Pferd und Einsatz wählen!"); return; }
+
+            // Hole aktuelle Lobby, finde meinen Index und update
+            // Firestore Array Update ist tricky. Wir lesen das ganze Array, ändern es und schreiben zurück.
+            // Transaction wäre besser, aber wir machen es "Arcade Style".
+            
+            // Erstmal Coins abziehen (wir vertrauen dem Client hier der Einfachheit halber)
+            // oder wir machen das beim Ende. Prompt sagt: "Am Anfang setzen".
+            // Besser: Wir ziehen es erst am Ende ab/drauf, damit wir nicht bei Disconnect Coins verlieren.
+            // Aber Regel war: Platz 4 = -2x Einsatz. Also Risiko.
+            
+            // Wir speichern einfach die Wette im Lobby-Doc.
+            const lobbyRef = doc(db, "lobbies", currentLobbyId);
+            // Leider können wir in Firestore Arrays nicht partiell updaten.
+            // Wir müssen das ganze Array neu schreiben.
+            // Da wir im Listener sind, haben wir keine "lokalen" Daten, die sicher aktuell sind.
+            // Wir machen eine kleine Transaction.
+            
+            // Wir tricksen: Wir laden das Doc einmal frisch.
+            // (In einer echten App würde man `runTransaction` nutzen).
+            // Hier einfacher Weg:
+            // Wir triggern eine Cloud Function ODER machen es optimistisch.
+            // Ich schreibe eine Hilfsfunktion, die das Array holt und patcht.
+            
+            // Um es einfach zu halten: Ich hole das Doc im Snapshot, aber ich kann nicht "in" den Snapshot schreiben.
+            // Ich nehme an, dass keine 2 Leute millisekundengenau gleichzeitig wetten.
+            
+            // Workaround:
+            const lobbyDoc = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = lobbyDoc.docs[0].data();
+            const newPlayers = data.players.map(p => {
+                if(p.uid === currentUser.uid) {
+                    return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
+                }
+                return p;
+            });
+            
+            await updateDoc(lobbyRef, { players: newPlayers });
+        }
+
+        // --- HOST GAME LOGIC ---
+        window.hostStartGame = async function() {
+            // Initialisiere Deck und Grid
+            const deck = createDeck();
+            // Penalty Cards: Spalte 1 bis 7 (Indices) -> 7 Karten
+            const penaltyCards = deck.splice(0, 7); 
+            // Positionen: 0
+            const positions = { '♦': 0, '♥': 0, '♠': 0, '♣': 0 };
+            
+            const gameState = {
+                deck: deck, // Restdeck
+                penaltyCards: penaltyCards, // Die 7 Karten oben
+                penaltyRevealed: [false, false, false, false, false, false, false],
+                positions: positions,
+                finishedOrder: [], // Wer kam wann ins Ziel?
+                lastDrawnCard: null
+            };
+
+            await updateDoc(doc(db, "lobbies", currentLobbyId), {
+                state: 'racing',
+                gameState: gameState
+            });
+        }
+
+        window.hostDrawCard = async function() {
+            // Holen wir den aktuellen State (um sicherzugehen) via Promise
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = snap.docs[0].data();
+            const gs = data.gameState;
+
+            if(gs.deck.length === 0) return; // Sollte nicht passieren
+
+            const card = gs.deck.pop();
+            gs.lastDrawnCard = card;
+
+            // 1. BEWEGUNG VORWÄRTS
+            if(!gs.finishedOrder.includes(card.suit)) {
+                gs.positions[card.suit]++;
+            }
+
+            // 2. CHECK FINISH
+            // Grid ist 0..8. Ziel ist > 8? Oder ist 8 das Ziel?
+            // "Zellen 2 bis 8 (Indizes 1-7) sind Penalty. Zelle 9 (Index 8) ist Ziel."
+            // Also Grid Index 0 = Start. 1..7 = Feld. 8 = Ziel.
+            // Wenn Position == 8, ist er im Ziel.
+            if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
+                gs.finishedOrder.push(card.suit);
+                gs.positions[card.suit] = 8; // Cap at Goal
+            }
+
+            // 3. PENALTY CHECK
+            // "Diese Karten werden umgedreht, wenn alle Asse die Spalte passiert haben."
+            // Wir müssen prüfen: Min(Position aller NOCH NICHT IM ZIEL befindlichen Asse) > PenaltyIndex?
+            // Oder müssen ALLE (auch die im Ziel) drüber sein? Ja.
+            // Also: Min(Position ALLER Asse) > ColumnIndex.
+            
+            // Penalty Columns sind Index 1 bis 7. (Im Array index 0 bis 6).
+            // Grid Spalte 1 = Penalty Karte 0.
+            // Regel: Karte 0 wird umgedreht, wenn MinPos > 1.
+            
+            const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
+            
+            // Check alle Penalty Cards
+            for(let i=0; i<7; i++) {
+                // i ist Index im PenaltyArray. Die Grid-Spalte dazu ist i+1.
+                // Wenn MinPos > i+1, haben alle die Spalte verlassen.
+                if(minPos > (i+1) && !gs.penaltyRevealed[i]) {
+                    // AUFDECKEN!
+                    gs.penaltyRevealed[i] = true;
+                    const pCard = gs.penaltyCards[i];
+                    
+                    // STRAFE: Ass gleicher Farbe muss 1 zurück
+                    // "Herz-Ass muss nur einmal eine Zelle horizontal nach links."
+                    // Check ob das Ass schon im Ziel ist?
+                    // Wenn es im Ziel ist, ist es sicher? "Wenn alle Asse das Ziel erreicht haben ist vorbei."
+                    // Normalerweise: Ja, auch aus dem Ziel kann man zurückgeschubst werden (extra gemein).
+                    // Wir machen es so: Zurückschubsen ist erlaubt, solange Spiel nicht vorbei.
+                    
+                    if(gs.finishedOrder.includes(pCard.suit)) {
+                        // Aus Finish Array entfernen!
+                        gs.finishedOrder = gs.finishedOrder.filter(s => s !== pCard.suit);
+                    }
+                    gs.positions[pCard.suit]--;
+                }
+            }
+
+            // 4. CHECK GAME OVER
+            let newState = 'racing';
+            if(gs.finishedOrder.length === 4) {
+                newState = 'finished';
+                calculateResults(data.players, gs.finishedOrder); // Ruft Funktion auf, die DB updated
+                return; // calculateResults macht das Update
+            }
+
+            await updateDoc(doc(db, "lobbies", currentLobbyId), {
+                gameState: gs,
+                state: newState
+            });
+        }
+
+        // --- GAME CLIENT LOGIC ---
+        function startGameClient(data) {
+            document.getElementById('view-lobby').classList.remove('active');
+            document.getElementById('view-race').classList.add('active');
+
+            if(isHost) {
+                document.getElementById('host-game-controls').style.display = 'block';
+                document.getElementById('client-wait-msg').style.display = 'none';
+            }
+
+            renderGrid(data.gameState);
+            renderLastCard(data.gameState.lastDrawnCard);
+        }
+
+        function renderGrid(gs) {
+            const container = document.getElementById('grid-target');
+            container.innerHTML = "";
+
+            // ZEILE 0: Penalty Cards
+            // Zelle 0 leer
+            container.innerHTML += `<div class="cell"></div>`;
+            // Penalty Cards 0..6
+            for(let i=0; i<7; i++) {
+                let content = "";
+                if(gs.penaltyRevealed[i]) {
+                    const c = gs.penaltyCards[i];
+                    const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
+                    content = `<div class="card ${color}">${c.suit}${c.value}</div>`;
+                } else {
+                    content = `<div class="card card-back"></div>`;
+                }
+                container.innerHTML += `<div class="cell cell-penalty">${content}</div>`;
+            }
+            // Ziel Zelle oben leer
+            container.innerHTML += `<div class="cell"></div>`;
+
+            // ZEILEN 1-4: PFERDE
+            const suits = ['♦', '♥', '♠', '♣'];
+            suits.forEach(suit => {
+                const pos = gs.positions[suit];
+                const color = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
+                
+                // Start Zelle (Index 0)
+                let startContent = ""; // Ass startet hier, aber wenn pos > 0 ist es weg
+                // Wir rendern einfach 9 Zellen (0..8).
+                
+                for(let i=0; i<=8; i++) {
+                    let cellClass = "cell";
+                    if(i === 8) cellClass += " cell-goal";
+                    
+                    let content = "";
+                    if(pos === i) {
+                        content = `<div class="card ${color}" style="transform: scale(0.9);">${suit}A</div>`;
+                    }
+                    
+                    container.innerHTML += `<div class="${cellClass}">${content}</div>`;
+                }
+            });
+        }
+
+        function renderLastCard(card) {
+            const div = document.getElementById('drawn-card-display');
+            if(!card) { div.innerHTML = ""; return; }
+            
+            const color = (card.suit === '♥' || card.suit === '♦') ? 'suit-red' : 'suit-black';
+            div.innerHTML = `
+                <div class="card last-card-anim ${color}">
+                    ${card.suit}${card.value}
+                </div>
+                <div style="color: #fff; font-weight: bold; margin-top:5px;">${card.suit} zieht!</div>
+            `;
+        }
+
+        // --- RESULTS & PAYOUT ---
+        async function calculateResults(players, finishedOrder) {
+            // finishedOrder = ['♥', '♠', '♦', '♣'] (1. bis 4.)
+            
+            // Wir müssen die Coins updaten. Da dies der Host macht, 
+            // haben wir das "Recht" dazu (Client Side Trust für dieses Beispiel).
+            
+            const updatedPlayers = players.map(p => {
+                const rankIndex = finishedOrder.indexOf(p.betSuit); // 0 = 1. Platz
+                let resultText = "";
+                let profit = 0;
+                
+                // Abrechnung nach deinen Regeln:
+                // Rank 0 (1. Platz): Verdoppelt -> Gewinn = Einsatz. (Wallet = Start + Gewinn)
+                // Rank 1 (2. Platz): Gleich -> Gewinn = 0.
+                // Rank 2 (3. Platz): Negativ -> Gewinn = -Einsatz.
+                // Rank 3 (4. Platz): Verdoppelt Negativ -> Gewinn = -2 * Einsatz.
+                
+                if(rankIndex === 0) { profit = p.betAmount; resultText = "GEWINN (x2)"; }
+                else if(rankIndex === 1) { profit = 0; resultText = "Rückerstattung"; }
+                else if(rankIndex === 2) { profit = -p.betAmount; resultText = "VERLOREN"; }
+                else if(rankIndex === 3) { profit = -2 * p.betAmount; resultText = "TOTALSCHADEN (-2x)"; }
+                else {
+                    // Fallback falls Spiel abbrach oder Bug
+                    profit = 0; resultText = "Neutral";
+                }
+
+                // Global Score Update (Feuer & Vergessen)
+                // Achtung: Wir können nicht für andere User in 'scores' schreiben ohne Auth? 
+                // Doch, Firebase Rules erlauben meist write if auth != null.
+                // Wir speichern das Ergebnis im Lobby-Objekt und jeder Client updated sein eigenes Wallet lokal/DB?
+                // Besser: Wir speichern "payout" im Lobby Doc und der Client (renderLobby) führt das Update aus.
+                
+                return { ...p, payout: profit, resultText: resultText, rank: rankIndex + 1 };
+            });
+
+            await updateDoc(doc(db, "lobbies", currentLobbyId), {
+                players: updatedPlayers,
+                state: 'finished'
+            });
+        }
+
+        function showResults(data) {
+            document.getElementById('view-race').classList.remove('active');
+            document.getElementById('view-result').classList.add('active');
+            
+            const list = document.getElementById('result-list');
+            list.innerHTML = "";
+            
+            // Zeige erst die Pferde-Reihenfolge
+            const order = data.gameState.finishedOrder;
+            let html = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #444; border-radius: 5px;">
+                <h3>Einlauf</h3>
+                <div style="display:flex; justify-content:space-around; font-size: 1.5rem;">
+                    <span>🥇 ${order[0]}</span>
+                    <span>🥈 ${order[1]}</span>
+                    <span>🥉 ${order[2]}</span>
+                    <span>💀 ${order[3]}</span>
+                </div>
+            </div>`;
+
+            // Zeige Spieler Ergebnisse
+            html += "<h3>Spieler Bilanz</h3>";
+            data.players.forEach(p => {
+                let color = "#fff";
+                if(p.payout > 0) color = "#00ff00";
+                if(p.payout < 0) color = "#ff0000";
+                
+                // Speziell: Zeige mein Ergebnis fett
+                const isMe = (p.uid === currentUser.uid);
+                const style = isMe ? "border: 2px solid #fff; background: #222;" : "border-bottom: 1px solid #333;";
+                
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 10px; align-items: center; ${style}">
+                        <div style="display:flex; align-items:center;">
+                            <img src="${p.avatar}" style="width:30px; height:30px; border-radius:50%; margin-right:10px;">
+                            <span>${p.name} (setzte ${p.betSuit})</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:bold; color: ${color}">${p.payout > 0 ? '+' : ''}${p.payout} Coins</div>
+                            <small>${p.resultText}</small>
+                        </div>
+                    </div>
+                `;
+
+                // WICHTIG: Wenn ich das bin und das Spiel gerade erst finished ist, update mein Wallet!
+                // Wir machen das über localStorage Check, damit es nicht bei jedem Reload passiert.
+                if(isMe && !localStorage.getItem(`paid_${currentLobbyId}`)) {
+                    // Update Global Wallet? 
+                    // Das fehlt hier noch im Detail. Wir zeigen es nur an.
+                    // Für Arcade-Feeling: "Score in DB speichern"
+                    if(p.payout !== 0) {
+                        saveWalletUpdate(p.payout);
+                    }
+                    localStorage.setItem(`paid_${currentLobbyId}`, "true");
+                }
+            });
+            
+            list.innerHTML = html;
+        }
+
+        async function saveWalletUpdate(amount) {
+            // Hier müssten wir eigentlich das User-Dokument updaten.
+            // Da wir noch kein zentrales "Wallet"-Dokument pro User haben, 
+            // sondern den Score nur im Spiel halten, simulieren wir das oder schreiben in Highscores.
+            // Wir speichern einfach einen "Transaction" Record.
+            try {
+                const playerName = currentUser.email.replace("@mba-arcade.com", "");
+                await addDoc(collection(db, "transactions"), { 
+                    name: playerName, 
+                    amount: amount, 
+                    date: new Date(),
+                    game: "HorseRace"
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // --- HELPER: DECK ---
+        function createDeck() {
+            // Skat Deck ohne Asse (die sind ja die Läufer)
+            // ABER: In diesem Spiel (Derby) werden die Karten gezogen, um zu laufen.
+            // Also brauchen wir ein volles Deck (32 Karten). 
+            // Wenn ein Ass gezogen wird, läuft das Ass? Ja.
+            // ODER: Wir nehmen ein 2. Deck zum Ziehen? 
+            // Üblicherweise: Man nimmt ein Deck. Die 4 Asse werden rausgenommen und aufs Feld gelegt.
+            // Verbleibend: 28 Karten.
+            // Aus diesen 28 Karten nehmen wir 7 für die Penalty-Reihe.
+            // Verbleibend: 21 Karten zum Ziehen.
+            
+            const suits = ['♦', '♥', '♠', '♣'];
+            const values = ['7', '8', '9', '10', 'B', 'D', 'K']; 
+            let newDeck = [];
+            for (let s of suits) {
+                for (let v of values) {
+                    newDeck.push({ suit: s, value: v });
+                }
+            }
+            // Mischen
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+            return newDeck;
+        }
+
+    </script>
+</body>
+</html>
