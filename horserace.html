@@ -14,7 +14,6 @@
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 10px 0; font-size: 1.5rem; text-align: center;}
         .highlight { color: #ffff00; font-weight: bold; }
         
-        /* Neuer Home Button Style (wie in Lobby) */
         .btn-home {
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
             padding: 8px 12px; border-radius: 5px; cursor: pointer;
@@ -31,6 +30,9 @@
         .btn:hover { background: #00ff00; color: #000; }
         .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
         
+        .btn-danger { border-color: #ff4444; color: #ff4444; margin-top: 10px; }
+        .btn-danger:hover { background: #ff4444; color: #fff; }
+
         input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
 
         /* --- VIEWS --- */
@@ -51,23 +53,16 @@
         }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
 
-        /* --- GAME GRID (THE RACE) --- */
+        /* --- GAME GRID --- */
         #race-container {
-            width: 100%;
-            overflow-x: auto; /* Scrollen auf Handy */
-            padding-bottom: 20px;
-            margin-top: 20px;
+            width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
         }
-        
         .race-grid {
             display: grid;
-            grid-template-columns: 60px repeat(7, 1fr) 60px; /* Start (Asse) | 7 Felder | Ziel */
-            grid-template-rows: 80px repeat(4, 60px); /* Penalty Zeile | 4 Pferde Zeilen */
-            gap: 5px;
-            min-width: 600px; /* Damit es nicht zu eng wird */
-            border: 2px solid #333;
-            padding: 10px;
-            background: #111;
+            grid-template-columns: 60px repeat(7, 1fr) 60px; /* Start | 7 Felder | Ziel */
+            grid-template-rows: 80px repeat(4, 60px); 
+            gap: 5px; min-width: 600px; 
+            border: 2px solid #333; padding: 10px; background: #111;
         }
 
         .cell { border: 1px dashed #333; display: flex; justify-content: center; align-items: center; position: relative; }
@@ -87,7 +82,28 @@
         .suit-red { color: #d32f2f; }
         .suit-black { color: #000; }
 
-        /* --- CURRENT ACTION --- */
+        /* --- BETTING (NEU: FARBEN) --- */
+        .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        
+        .bet-option { 
+            background: #e0e0e0; border: 2px solid #999; 
+            padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
+            transition: transform 0.2s;
+            box-shadow: 0 0 5px rgba(255,255,255,0.1);
+        }
+        /* Spezifische Farben für die Buttons */
+        .bet-option.suit-red { color: #d32f2f; border-color: #d32f2f; }
+        .bet-option.suit-black { color: #000; border-color: #555; }
+
+        .bet-option:hover { transform: scale(1.1); background: #fff; }
+        .bet-option.selected { 
+            background: #fff; 
+            box-shadow: 0 0 15px currentColor; /* Leuchtet in der Farbe des Suits */
+            transform: scale(1.1); 
+            border-width: 3px;
+        }
+
+        /* --- ACTION AREA --- */
         #action-area {
             position: sticky; bottom: 0; background: rgba(0,0,0,0.9); width: 100%; padding: 15px;
             display: flex; flex-direction: column; align-items: center; border-top: 1px solid #333; z-index: 100;
@@ -98,48 +114,24 @@
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-        /* --- BETTING (NEUES DESIGN) --- */
-        .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        
-        .bet-option { 
-            /* Heller Hintergrund damit man Schwarz sieht */
-            background: #e0e0e0; 
-            border: 2px solid #999; 
-            padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
-            transition: transform 0.2s;
-            color: #000; /* Immer schwarz als Grundfarbe */
-            box-shadow: 0 0 5px rgba(255,255,255,0.1);
-        }
-        .bet-option:hover { transform: scale(1.1); background: #fff; }
-        .bet-option.selected { 
-            border-color: #00ff00; 
-            background: #fff; 
-            box-shadow: 0 0 15px #00ff00; 
-            transform: scale(1.1); 
-        }
-
     </style>
 </head>
 <body>
 
     <div id="view-start" class="view active">
         <button onclick="window.location.href='lobby.html'" class="btn-home">🏠</button>
-        
         <h1>🐎 MULTIPLAYER DERBY</h1>
         <p>Erstelle eine Runde oder tritt bei.</p>
-        
         <div style="width: 100%; margin: 20px 0;">
             <h3>Offene Lobbys</h3>
             <div id="lobby-list">Lade...</div>
         </div>
-
         <button class="btn" onclick="createNewLobby()">NEUE LOBBY ERSTELLEN</button>
     </div>
 
     <div id="view-lobby" class="view">
         <h2 id="lobby-title">Lobby</h2>
         <p>Warte auf Spieler... (<span id="player-count">0</span>)</p>
-
         <div class="player-list" id="lobby-players"></div>
 
         <div id="betting-controls" style="width: 100%; max-width: 500px; text-align: center;">
@@ -151,7 +143,6 @@
                 <div class="bet-option suit-black" onclick="selectBet('♣')">♣</div>
             </div>
             <input type="number" id="bet-amount" placeholder="Coins" value="100" min="10" max="1000">
-            <div style="margin-top: 10px; font-size: 0.8rem; color: #888;">Max. 1000 Coins</div>
             <button class="btn" id="btn-lock-bet" onclick="lockInBet()" style="margin-top: 15px;">WETTE PLATZIEREN</button>
         </div>
 
@@ -159,6 +150,7 @@
             <p class="highlight">👑 DU BIST DER HOST</p>
             <p id="host-status-msg" style="font-size: 0.9rem; color: #aaa;">Warte auf Einsätze...</p>
             <button class="btn" id="btn-start-game" onclick="hostStartGame()" disabled>RENNEN STARTEN</button>
+            <button class="btn btn-danger" onclick="deleteLobby()">LOBBY AUFLÖSEN</button>
         </div>
     </div>
 
@@ -167,14 +159,11 @@
             <span>🏁 ZIEL: 8 Felder</span>
             <span id="race-status">Rennen läuft...</span>
         </div>
-
         <div id="race-container">
             <div id="grid-target" class="race-grid"></div>
         </div>
-
         <div id="action-area">
             <div id="drawn-card-display"></div>
-            
             <div id="host-game-controls" style="display: none; width: 100%;">
                 <button class="btn" onclick="hostDrawCard()" style="width: 100%; font-size: 1.2rem; padding: 15px;">KARTE ZIEHEN 🃏</button>
             </div>
@@ -190,10 +179,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- HIER DEINE FIREBASE CONFIG EINFÜGEN ---
+        // --- FIREBASE CONFIG (DEIN ECHTER KEY) ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -201,21 +190,18 @@
             storageBucket: "mba-arcade.firebasestorage.app",
             messagingSenderId: "497628563783",
             appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
-             // ... deine Config ...
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- GLOBAL STATE ---
         let currentUser = null;
         let currentLobbyId = null;
         let lobbyUnsubscribe = null;
         let isHost = false;
         let myBetSuit = null;
 
-        // --- SETUP ---
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
@@ -232,16 +218,11 @@
                 const list = document.getElementById('lobby-list');
                 list.innerHTML = "";
                 if(snapshot.empty) list.innerHTML = "<p style='color:#888'>Keine offenen Lobbys.</p>";
-                
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const playerCount = data.players ? data.players.length : 0;
                     list.innerHTML += `
                         <div class="lobby-card">
-                            <div>
-                                <strong>Host: ${data.hostName}</strong><br>
-                                <small>Spieler: ${playerCount}</small>
-                            </div>
+                            <div><strong>Host: ${data.hostName}</strong><br><small>Spieler: ${data.players ? data.players.length : 0}</small></div>
                             <button class="btn" style="width: auto;" onclick="joinLobby('${doc.id}')">BEITRETEN</button>
                         </div>
                     `;
@@ -252,70 +233,62 @@
         window.createNewLobby = async function() {
             const playerName = currentUser.email.replace("@mba-arcade.com", "");
             const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
-
             const lobbyData = {
                 hostId: currentUser.uid,
                 hostName: playerName,
                 state: "waiting",
                 createdAt: new Date(),
-                players: [{
-                    uid: currentUser.uid,
-                    name: playerName,
-                    avatar: avatar,
-                    betAmount: 0,
-                    betSuit: null,
-                    ready: false
-                }],
+                players: [{ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false }],
                 gameState: null
             };
-
             const docRef = await addDoc(collection(db, "lobbies"), lobbyData);
             joinLobby(docRef.id);
         }
 
         window.joinLobby = async function(lobbyId) {
             currentLobbyId = lobbyId;
-            const playerName = currentUser.email.replace("@mba-arcade.com", "");
-            
-            // UI Wechsel
             document.getElementById('view-start').classList.remove('active');
             document.getElementById('view-lobby').classList.add('active');
 
-            // Listener starten
-            const lobbyRef = doc(db, "lobbies", lobbyId);
-            lobbyUnsubscribe = onSnapshot(lobbyRef, (docSnap) => {
-                if(!docSnap.exists()) { alert("Lobby geschlossen"); window.location.reload(); return; }
+            lobbyUnsubscribe = onSnapshot(doc(db, "lobbies", lobbyId), (docSnap) => {
+                if(!docSnap.exists()) { 
+                    alert("Lobby wurde aufgelöst."); 
+                    window.location.reload(); 
+                    return; 
+                }
                 const data = docSnap.data();
                 renderLobbyRoom(data);
             });
         }
 
+        // --- LOBBY DELETE ---
+        window.deleteLobby = async function() {
+            if(confirm("Möchtest du diese Lobby wirklich löschen?")) {
+                await deleteDoc(doc(db, "lobbies", currentLobbyId));
+                // Der Snapshot Listener feuert bei 'delete' -> reload
+            }
+        }
+
         function renderLobbyRoom(data) {
-            // Check ob ich schon in der Spielerliste bin
             const me = data.players.find(p => p.uid === currentUser.uid);
-            
             if(!me) {
-                // Wenn nicht, füge mich hinzu
                 const playerName = currentUser.email.replace("@mba-arcade.com", "");
                 const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
-                const newPlayer = { uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false };
                 updateDoc(doc(db, "lobbies", currentLobbyId), {
-                    players: arrayUnion(newPlayer)
+                    players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false })
                 });
-                return; // Warte auf nächsten Snapshot
+                return; 
             }
 
             isHost = (data.hostId === currentUser.uid);
             
-            // Player Liste rendern
             const list = document.getElementById('lobby-players');
             list.innerHTML = "";
             let readyCount = 0;
 
             data.players.forEach(p => {
                 if(p.ready) readyCount++;
-                const status = p.ready ? `<span style="color:#00ff00">Bereit (${p.betAmount} auf ${p.betSuit})</span>` : `<span style="color:#888">Wettet...</span>`;
-                
+                const status = p.ready ? `<span style="color:#00ff00">Bereit</span>` : `<span style="color:#888">Wettet...</span>`;
                 list.innerHTML += `
                     <div class="player-chip">
                         <img src="${p.avatar}" class="player-avatar">
@@ -327,69 +300,47 @@
 
             document.getElementById('player-count').innerText = data.players.length;
 
-            // Host Controls
             if(isHost) {
                 document.getElementById('host-controls').style.display = 'block';
                 const startBtn = document.getElementById('btn-start-game');
-                const statusMsg = document.getElementById('host-status-msg');
+                const msg = document.getElementById('host-status-msg');
+                const allReady = (data.players.length > 0 && readyCount === data.players.length);
                 
-                // START BEDINGUNG:
-                // Alle anwesenden Spieler müssen 'ready' sein. 
-                // Es ist egal ob es 2, 3 oder 4 Spieler sind.
-                const allPlayersReady = (data.players.length > 0) && (readyCount === data.players.length);
-                
-                startBtn.disabled = !allPlayersReady;
-                
-                if(!allPlayersReady) {
-                    statusMsg.innerText = `Warte auf Einsätze: ${readyCount} / ${data.players.length} bereit...`;
-                    statusMsg.style.color = "#aaa";
-                } else {
-                    statusMsg.innerText = "Alle bereit! Start möglich.";
-                    statusMsg.style.color = "#00ff00";
-                }
+                startBtn.disabled = !allReady;
+                msg.innerText = allReady ? "Alle bereit!" : `Warte: ${readyCount}/${data.players.length} bereit...`;
+                msg.style.color = allReady ? "#00ff00" : "#aaa";
             }
 
-            // Betting UI verstecken wenn ich schon ready bin
-            if(me.ready) {
-                document.getElementById('betting-controls').style.display = 'none';
-            }
+            if(me.ready) document.getElementById('betting-controls').style.display = 'none';
 
-            // Spielstart Check
-            if(data.state === 'racing') {
-                startGameClient(data);
-            }
-            if(data.state === 'finished') {
-                showResults(data);
-            }
+            if(data.state === 'racing') startGameClient(data);
+            if(data.state === 'finished') showResults(data);
         }
 
-        // --- BETTING LOGIC ---
         window.selectBet = function(suit) {
             myBetSuit = suit;
             document.querySelectorAll('.bet-option').forEach(el => el.classList.remove('selected'));
-            const options = document.querySelectorAll('.bet-option');
-            options.forEach(opt => { if(opt.innerText.includes(suit)) opt.classList.add('selected'); });
+            document.querySelectorAll('.bet-option').forEach(opt => {
+                if(opt.innerText.includes(suit)) opt.classList.add('selected');
+            });
         }
 
         window.lockInBet = async function() {
             const amount = parseInt(document.getElementById('bet-amount').value);
-            if(!myBetSuit || amount <= 0 || amount > 1000) { alert("Bitte Pferd und Einsatz wählen!"); return; }
+            if(!myBetSuit || amount <= 0) return;
 
-            // Umweg über Snapshot Update (Transaction wäre sauberer, aber dies reicht für Arcade)
-            const lobbyDoc = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
-            const data = lobbyDoc.docs[0].data();
+            const lobbyRef = doc(db, "lobbies", currentLobbyId);
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = snap.docs[0].data();
             
             const newPlayers = data.players.map(p => {
-                if(p.uid === currentUser.uid) {
-                    return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
-                }
+                if(p.uid === currentUser.uid) return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
                 return p;
             });
-            
-            await updateDoc(doc(db, "lobbies", currentLobbyId), { players: newPlayers });
+            await updateDoc(lobbyRef, { players: newPlayers });
         }
 
-        // --- HOST GAME LOGIC ---
+        // --- GAME LOGIC ---
         window.hostStartGame = async function() {
             const deck = createDeck();
             const penaltyCards = deck.splice(0, 7); 
@@ -415,57 +366,49 @@
             const data = snap.docs[0].data();
             const gs = data.gameState;
 
-            if(gs.deck.length === 0) return; 
+            // FIX: UNENDLICHER STAPEL (RESHUFFLE)
+            if(gs.deck.length === 0) {
+                gs.deck = createDeck(); // Neues Deck erstellen (ohne Asse theoretisch, aber wir nehmen full deck zum ziehen)
+            }
 
             const card = gs.deck.pop();
             gs.lastDrawnCard = card;
 
-            // 1. BEWEGUNG
+            // Move
             if(!gs.finishedOrder.includes(card.suit)) {
                 gs.positions[card.suit]++;
             }
 
-            // 2. CHECK FINISH (Grid Index 8 = Ziel)
+            // Finish check (Index 8 is goal)
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
                 gs.positions[card.suit] = 8; 
             }
 
-            // 3. PENALTY CHECK
+            // Penalty Logic Fix: ">=" (Sobald alle DRIN sind)
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
             
             for(let i=0; i<7; i++) {
-                // i ist Index im PenaltyArray. Die Grid-Spalte ist i+1.
-                // Wenn das letzte Pferd (minPos) über i+1 ist:
-                if(minPos > (i+1) && !gs.penaltyRevealed[i]) {
+                // i=0 ist Spalte 1. minPos muss >= 1 sein.
+                if(minPos >= (i+1) && !gs.penaltyRevealed[i]) {
                     gs.penaltyRevealed[i] = true;
                     const pCard = gs.penaltyCards[i];
                     
-                    // Ass gleicher Farbe muss 1 zurück, falls nicht finished
+                    // Strafe: Zurück (wenn nicht im Ziel)
                     if(!gs.finishedOrder.includes(pCard.suit)) {
                         gs.positions[pCard.suit]--;
-                    } 
-                    // Variante: Auch aus dem Ziel zurück? Du sagtest "nein" wenn Spiel vorbei, 
-                    // aber solange Spiel läuft, kann man theoretisch rausfliegen? 
-                    // Wir lassen finished Pferde sicher im Stall für weniger Frust.
+                    }
                 }
             }
 
-            // 4. CHECK GAME OVER
-            let newState = 'racing';
             if(gs.finishedOrder.length === 4) {
-                newState = 'finished';
                 calculateResults(data.players, gs.finishedOrder); 
                 return; 
             }
 
-            await updateDoc(doc(db, "lobbies", currentLobbyId), {
-                gameState: gs,
-                state: newState
-            });
+            await updateDoc(doc(db, "lobbies", currentLobbyId), { gameState: gs });
         }
 
-        // --- GAME CLIENT LOGIC ---
         function startGameClient(data) {
             document.getElementById('view-lobby').classList.remove('active');
             document.getElementById('view-race').classList.add('active');
@@ -474,7 +417,6 @@
                 document.getElementById('host-game-controls').style.display = 'block';
                 document.getElementById('client-wait-msg').style.display = 'none';
             }
-
             renderGrid(data.gameState);
             renderLastCard(data.gameState.lastDrawnCard);
         }
@@ -482,36 +424,29 @@
         function renderGrid(gs) {
             const container = document.getElementById('grid-target');
             container.innerHTML = "";
-
-            // ZEILE 0: Penalty Cards
+            
+            // Zeile 0: Penalty
             container.innerHTML += `<div class="cell"></div>`;
             for(let i=0; i<7; i++) {
-                let content = "";
+                let content = `<div class="card card-back"></div>`;
                 if(gs.penaltyRevealed[i]) {
                     const c = gs.penaltyCards[i];
                     const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
                     content = `<div class="card ${color}">${c.suit}${c.value}</div>`;
-                } else {
-                    content = `<div class="card card-back"></div>`;
                 }
                 container.innerHTML += `<div class="cell cell-penalty">${content}</div>`;
             }
             container.innerHTML += `<div class="cell"></div>`;
 
-            // ZEILEN 1-4: PFERDE
+            // Zeilen 1-4
             const suits = ['♦', '♥', '♠', '♣'];
             suits.forEach(suit => {
                 const pos = gs.positions[suit];
                 const color = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
-                
                 for(let i=0; i<=8; i++) {
-                    let cellClass = "cell";
-                    if(i === 8) cellClass += " cell-goal";
-                    let content = "";
-                    if(pos === i) {
-                        content = `<div class="card ${color}" style="transform: scale(0.9);">${suit}A</div>`;
-                    }
-                    container.innerHTML += `<div class="${cellClass}">${content}</div>`;
+                    let cls = i===8 ? "cell cell-goal" : "cell";
+                    let content = (pos === i) ? `<div class="card ${color}" style="transform:scale(0.9);">${suit}A</div>` : "";
+                    container.innerHTML += `<div class="${cls}">${content}</div>`;
                 }
             });
         }
@@ -520,93 +455,54 @@
             const div = document.getElementById('drawn-card-display');
             if(!card) { div.innerHTML = ""; return; }
             const color = (card.suit === '♥' || card.suit === '♦') ? 'suit-red' : 'suit-black';
-            div.innerHTML = `
-                <div class="card last-card-anim ${color}">
-                    ${card.suit}${card.value}
-                </div>
-                <div style="color: #fff; font-weight: bold; margin-top:5px;">${card.suit} zieht!</div>
-            `;
+            div.innerHTML = `<div class="card last-card-anim ${color}">${card.suit}${card.value}</div><div style="font-weight:bold; margin-top:5px;">${card.suit} zieht!</div>`;
         }
 
-        // --- RESULTS ---
         async function calculateResults(players, finishedOrder) {
             const updatedPlayers = players.map(p => {
-                const rankIndex = finishedOrder.indexOf(p.betSuit); 
-                let resultText = "";
-                let profit = 0;
-                
-                if(rankIndex === 0) { profit = p.betAmount; resultText = "GEWINN (x2)"; }
-                else if(rankIndex === 1) { profit = 0; resultText = "Rückerstattung"; }
-                else if(rankIndex === 2) { profit = -p.betAmount; resultText = "VERLOREN"; }
-                else if(rankIndex === 3) { profit = -2 * p.betAmount; resultText = "TOTALSCHADEN (-2x)"; }
-                
-                return { ...p, payout: profit, resultText: resultText, rank: rankIndex + 1 };
+                const rank = finishedOrder.indexOf(p.betSuit); 
+                let profit = 0, txt = "";
+                if(rank === 0) { profit = p.betAmount; txt = "GEWINN (x2)"; }
+                else if(rank === 1) { profit = 0; txt = "GELD ZURÜCK"; }
+                else if(rank === 2) { profit = -p.betAmount; txt = "VERLOREN"; }
+                else if(rank === 3) { profit = -2 * p.betAmount; txt = "STRAFE (-2x)"; }
+                return { ...p, payout: profit, resultText: txt };
             });
-
-            await updateDoc(doc(db, "lobbies", currentLobbyId), {
-                players: updatedPlayers,
-                state: 'finished'
-            });
+            await updateDoc(doc(db, "lobbies", currentLobbyId), { players: updatedPlayers, state: 'finished' });
         }
 
         function showResults(data) {
             document.getElementById('view-race').classList.remove('active');
             document.getElementById('view-result').classList.add('active');
-            
             const list = document.getElementById('result-list');
-            list.innerHTML = "";
+            const o = data.gameState.finishedOrder;
             
-            const order = data.gameState.finishedOrder;
-            let html = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #444; border-radius: 5px;">
+            let html = `<div style="margin-bottom:20px; padding:10px; border:1px solid #444; border-radius:5px;">
                 <h3>Einlauf</h3>
-                <div style="display:flex; justify-content:space-around; font-size: 1.5rem;">
-                    <span>🥇 ${order[0]}</span>
-                    <span>🥈 ${order[1]}</span>
-                    <span>🥉 ${order[2]}</span>
-                    <span>💀 ${order[3]}</span>
-                </div>
-            </div>`;
-
-            html += "<h3>Spieler Bilanz</h3>";
+                <div style="display:flex; justify-content:space-around; font-size:1.5rem;">
+                    <span>🥇${o[0]}</span><span>🥈${o[1]}</span><span>🥉${o[2]}</span><span>💀${o[3]}</span>
+                </div></div><h3>Bilanz</h3>`;
+            
             data.players.forEach(p => {
-                let color = "#fff";
-                if(p.payout > 0) color = "#00ff00";
-                if(p.payout < 0) color = "#ff0000";
-                
-                const isMe = (p.uid === currentUser.uid);
-                const style = isMe ? "border: 2px solid #fff; background: #222;" : "border-bottom: 1px solid #333;";
-                
-                html += `
-                    <div style="display: flex; justify-content: space-between; padding: 10px; align-items: center; ${style}">
-                        <div style="display:flex; align-items:center;">
-                            <img src="${p.avatar}" style="width:30px; height:30px; border-radius:50%; margin-right:10px;">
-                            <span>${p.name} (setzte ${p.betSuit})</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:bold; color: ${color}">${p.payout > 0 ? '+' : ''}${p.payout} Coins</div>
-                            <small>${p.resultText}</small>
-                        </div>
-                    </div>
-                `;
+                let col = p.payout > 0 ? "#00ff00" : (p.payout < 0 ? "#ff0000" : "#fff");
+                html += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                    <span>${p.name} (${p.betSuit})</span>
+                    <div style="text-align:right;"><div style="font-weight:bold; color:${col}">${p.payout>0?'+':''}${p.payout}</div><small>${p.resultText}</small></div>
+                </div>`;
             });
             list.innerHTML = html;
         }
 
-        // --- HELPER: DECK ---
         function createDeck() {
             const suits = ['♦', '♥', '♠', '♣'];
             const values = ['7', '8', '9', '10', 'B', 'D', 'K']; 
-            let newDeck = [];
-            for (let s of suits) {
-                for (let v of values) {
-                    newDeck.push({ suit: s, value: v });
-                }
-            }
-            for (let i = newDeck.length - 1; i > 0; i--) {
+            let d = [];
+            for (let s of suits) for (let v of values) d.push({ suit: s, value: v });
+            for (let i = d.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+                [d[i], d[j]] = [d[j], d[i]];
             }
-            return newDeck;
+            return d;
         }
     </script>
 </body>
