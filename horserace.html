@@ -142,7 +142,7 @@
                 <div class="bet-option suit-black" onclick="selectBet('♠')">♠</div>
                 <div class="bet-option suit-black" onclick="selectBet('♣')">♣</div>
             </div>
-            <input type="number" id="bet-amount" placeholder="Coins" value="100" min="10" max="1000">
+            <input type="number" id="bet-amount" placeholder="Coins" value="1" min="1" max="1000">
             <button class="btn" id="btn-lock-bet" onclick="lockInBet()" style="margin-top: 15px;">WETTE PLATZIEREN</button>
         </div>
 
@@ -459,15 +459,40 @@
         }
 
         async function calculateResults(players, finishedOrder) {
+            // ... innerhalb von calculateResults ...
+            
             const updatedPlayers = players.map(p => {
-                const rank = finishedOrder.indexOf(p.betSuit); 
-                let profit = 0, txt = "";
-                if(rank === 0) { profit = p.betAmount; txt = "GEWINN (x2)"; }
-                else if(rank === 1) { profit = 0; txt = "GELD ZURÜCK"; }
-                else if(rank === 2) { profit = -p.betAmount; txt = "VERLOREN"; }
-                else if(rank === 3) { profit = -2 * p.betAmount; txt = "STRAFE (-2x)"; }
-                return { ...p, payout: profit, resultText: txt };
+                const rankIndex = finishedOrder.indexOf(p.betSuit); 
+                let resultText = "";
+                let profit = 0;
+                
+                // HIER IST DIE LOGIK, DIE DU ÄNDERN MUSST:
+
+                if(rankIndex === 0) { 
+                    // 1. Platz: Mal 2 (5 -> 10)
+                    profit = p.betAmount * 2; 
+                    resultText = "SUPER (x2)"; 
+                }
+                else if(rankIndex === 1) { 
+                    // 2. Platz: Mal 1 (5 -> 5)
+                    profit = p.betAmount * 1; 
+                    resultText = "GUT (x1)"; 
+                }
+                else if(rankIndex === 2) { 
+                    // 3. Platz: Mal -1 (5 -> -5)
+                    profit = p.betAmount * -1; 
+                    resultText = "VERLOREN (-1x)"; 
+                }
+                else if(rankIndex === 3) { 
+                    // 4. Platz: Mal -2 (5 -> -10)
+                    profit = p.betAmount * -2; 
+                    resultText = "STRAFE (-2x)"; 
+                }
+                
+                return { ...p, payout: profit, resultText: resultText, rank: rankIndex + 1 };
             });
+
+            // ... Rest der Funktion bleibt gleich ...
             await updateDoc(doc(db, "lobbies", currentLobbyId), { players: updatedPlayers, state: 'finished' });
         }
 
