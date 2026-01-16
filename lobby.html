@@ -17,11 +17,12 @@
             min-height: 100vh; 
             margin: 0; 
             padding: 20px;
+            box-sizing: border-box; /* Wichtig für Grid */
         }
 
-        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; }
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
         
-        /* --- AVATAR VORSCHAU (KLEIN OBEN) --- */
+        /* --- AVATAR VORSCHAU --- */
         #current-user-avatar {
             width: 80px; height: 80px;
             border-radius: 50%;
@@ -32,23 +33,69 @@
         }
 
         /* --- CONTAINER STEUERUNG --- */
-        .view-section { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; }
+        .view-section { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
         .active { display: flex; }
 
-        /* --- BUTTONS & KARTEN --- */
-        .game-card {
-            background: #222; border: 1px solid #444; border-radius: 10px;
-            padding: 20px; margin: 15px 0; width: 100%; text-align: center;
-            cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+        /* --- DAS NEUE 12-COLUMN GRID SYSTEM --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr); /* 12 Spalten */
+            gap: 20px; /* Abstand zwischen den Karten */
+            width: 100%;
+            margin-top: 20px;
         }
-        .game-card:hover { transform: translateY(-5px); border-color: #00ff00; }
-        .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; }
+
+        /* --- KARTEN DESIGN --- */
+        .game-card {
+            /* STANDARD (Mobile): Nimmt volle 12 Spalten */
+            grid-column: span 12; 
+            
+            background: #222; 
+            border: 1px solid #444; 
+            border-radius: 10px;
+            padding: 30px 20px; 
+            text-align: center;
+            cursor: pointer; 
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 150px; /* Einheitliche Höhe */
+        }
+        
+        .game-card:hover { 
+            transform: translateY(-5px); 
+            border-color: #00ff00; 
+            box-shadow: 0 5px 15px rgba(0,255,0,0.1);
+        }
+
+        .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; margin-bottom: 10px; }
         .game-desc { color: #aaa; font-size: 0.9rem; }
 
+        /* --- MEDIA QUERY FÜR TABLET & PC (ab 768px) --- */
+        @media (min-width: 768px) {
+            .game-card {
+                grid-column: span 6; /* Nimmt 6 von 12 Spalten (also 50%) */
+            }
+        }
+
+        /* --- BUTTONS --- */
+        .btn-container {
+            /* Container für Buttons, der auch im Grid liegen kann oder darunter */
+            grid-column: span 12;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
         .btn-action {
-            margin-top: 15px; width: 100%; padding: 12px;
+            margin-top: 15px; width: 100%; max-width: 300px; padding: 12px;
             background: #333; color: white; border: 1px solid #888;
             cursor: pointer; font-family: inherit; font-weight: bold;
+            transition: all 0.2s;
         }
         .btn-action:hover { background: #444; border-color: #fff; }
 
@@ -56,8 +103,10 @@
             margin-top: 30px; background: transparent; border: 1px solid #ff4444; color: #ff4444;
             padding: 10px 20px; cursor: pointer; font-family: inherit; border-radius: 5px;
         }
-        
-        /* --- PROFIL EDIT STYLE --- */
+        .btn-logout:hover { background: rgba(255, 68, 68, 0.1); }
+
+        /* --- PROFIL EDIT STYLE (Bleibt zentriert und schmal) --- */
+        .profile-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
         .avatar-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
         .avatar-option {
             width: 60px; height: 60px; border: 2px solid #333; cursor: pointer;
@@ -65,54 +114,60 @@
         }
         .avatar-option:hover { transform: scale(1.1); opacity: 1; }
         .avatar-option.selected { border-color: #00ff00; opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px #00ff00; }
-
         input { padding: 10px; width: 100%; background: #222; border: 1px solid #555; color: white; margin-bottom: 10px; box-sizing: border-box;}
+
     </style>
 </head>
 <body>
 
     <h1>MBA ARCADE</h1>
-    
     <img id="current-user-avatar" src="100.jpg" alt="Avatar">
-    
     <p id="user-greeting">Lade...</p>
 
     <div id="view-dashboard" class="view-section active">
         
-        <div class="game-card" onclick="window.location.href='snake.html'">
-            <span class="game-title">🐍 MBA SNAKE</span>
-            <span class="game-desc">Global Edition</span>
-        </div>
+        <div class="game-grid">
+            
+            <div class="game-card" onclick="window.location.href='snake.html'">
+                <span class="game-title">🐍 MBA SNAKE</span>
+                <span class="game-desc">Global Edition</span>
+            </div>
 
-        <div class="game-card" style="opacity: 0.5; cursor: not-allowed;">
-            <span class="game-title">🚧 COMING SOON</span>
-            <span class="game-desc">Neues Spiel...</span>
-        </div>
+            <div class="game-card" style="opacity: 0.5; cursor: not-allowed;">
+                <span class="game-title">🚧 COMING SOON</span>
+                <span class="game-desc">Neues Spiel...</span>
+            </div>
 
-        <button class="btn-action" onclick="switchView('profile')">⚙️ PROFIL BEARBEITEN</button>
-        <button class="btn-logout" onclick="logout()">Abmelden</button>
+            <div class="btn-container">
+                <button class="btn-action" onclick="switchView('profile')">⚙️ PROFIL BEARBEITEN</button>
+                <button class="btn-logout" onclick="logout()">Abmelden</button>
+            </div>
+
+        </div>
     </div>
 
     <div id="view-profile" class="view-section">
-        <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center;">AVATAR WÄHLEN</h2>
-        
-        <div class="avatar-grid" id="avatar-container">
-            </div>
+        <div class="profile-container">
+            <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center;">AVATAR WÄHLEN</h2>
+            
+            <div class="avatar-grid" id="avatar-container">
+                </div>
 
-        <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center; margin-top: 20px;">PASSWORT ÄNDERN</h2>
-        <input type="password" id="new-password" placeholder="Neues Passwort eingeben">
-        <button class="btn-action" onclick="changeUserPassword()">PASSWORT SPEICHERN</button>
+            <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center; margin-top: 20px;">PASSWORT ÄNDERN</h2>
+            <input type="password" id="new-password" placeholder="Neues Passwort eingeben">
+            <button class="btn-action" onclick="changeUserPassword()">PASSWORT SPEICHERN</button>
 
-        <hr style="border: 0; border-top: 1px solid #333; width: 100%; margin: 20px 0;">
-        
-        <button class="btn-action" onclick="switchView('dashboard')">◀ ZURÜCK ZUR LOBBY</button>
+            <hr style="border: 0; border-top: 1px solid #333; width: 100%; margin: 20px 0;">
+            
+            <button class="btn-action" onclick="switchView('dashboard')">◀ ZURÜCK ZUR LOBBY</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // --- WICHTIG: CONFIG HIER EINFÜGEN ---
+        // --- DEINE FIREBASE CONFIG EINFÜGEN ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -120,7 +175,7 @@
             storageBucket: "mba-arcade.firebasestorage.app",
             messagingSenderId: "497628563783",
             appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
-            // ... dein Config Block ...
+            // ... dein Code ...
         };
 
         const app = initializeApp(firebaseConfig);
@@ -132,12 +187,9 @@
         function initProfile() {
             const container = document.getElementById('avatar-container');
             const currentImg = document.getElementById('current-user-avatar');
-            
-            // Laden oder Standard
             const savedAvatar = localStorage.getItem('mba_avatar') || myAvatars[0];
-            currentImg.src = savedAvatar; // Oben anzeigen
+            currentImg.src = savedAvatar; 
 
-            // Grid erstellen
             container.innerHTML = "";
             myAvatars.forEach(filename => {
                 const img = document.createElement('img');
@@ -146,12 +198,9 @@
                 if(filename === savedAvatar) img.classList.add('selected');
 
                 img.onclick = function() {
-                    // Visuell ändern
                     document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
                     img.classList.add('selected');
-                    // Speichern
                     localStorage.setItem('mba_avatar', filename);
-                    // Oben aktualisieren
                     document.getElementById('current-user-avatar').src = filename;
                 };
                 container.appendChild(img);
@@ -162,20 +211,12 @@
         window.changeUserPassword = function() {
             const newPw = document.getElementById('new-password').value;
             const user = auth.currentUser;
-
-            if (newPw.length < 6) {
-                alert("Passwort muss mindestens 6 Zeichen haben!");
-                return;
-            }
-
+            if (newPw.length < 6) { alert("Passwort muss mindestens 6 Zeichen haben!"); return; }
             if (user) {
                 updatePassword(user, newPw).then(() => {
                     alert("Passwort erfolgreich geändert!");
                     document.getElementById('new-password').value = "";
                 }).catch((error) => {
-                    console.error(error);
-                    // WICHTIG: Aus Sicherheitsgründen erlaubt Firebase das oft nur,
-                    // wenn der Login erst kurz her ist.
                     if (error.code === 'auth/requires-recent-login') {
                         alert("Bitte logge dich neu ein, um das Passwort zu ändern.");
                         logout();
@@ -186,16 +227,15 @@
             }
         }
 
-        // --- ANSICHT WECHSELN ---
+        // --- NAVIGATION ---
         window.switchView = function(viewName) {
             document.getElementById('view-dashboard').classList.remove('active');
             document.getElementById('view-profile').classList.remove('active');
-            
             if(viewName === 'dashboard') document.getElementById('view-dashboard').classList.add('active');
             if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
         }
 
-        // --- AUTH & START ---
+        // --- AUTH ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const name = user.email.replace("@mba-arcade.com", "");
