@@ -532,13 +532,41 @@
             document.getElementById('view-race').classList.remove('active');
             document.getElementById('view-result').classList.add('active');
             const list = document.getElementById('result-list');
-            const o = data.gameState.finishedOrder;
             
+            // 1. SICHERHEITS-CHECK: PFERDE AUFFÜLLEN
+            // Wir holen die offizielle Reihenfolge
+            let order = data.gameState.finishedOrder || [];
+            
+            // Wir prüfen, welche Symbole noch fehlen
+            const allSuits = ['♦', '♥', '♠', '♣'];
+            const missing = allSuits.filter(suit => !order.includes(suit));
+            
+            // Wir hängen die fehlenden einfach hinten an
+            // (Damit ist Platz 1, 2, 3, 4 immer belegt, nie undefined)
+            const finalOrder = [...order, ...missing];
+
             let html = `<div style="margin-bottom:20px; padding:10px; border:1px solid #444; border-radius:5px;">
                 <h3>Einlauf</h3>
                 <div style="display:flex; justify-content:space-around; font-size:1.5rem;">
-                    <span>🥇${o[0]}</span><span>🥈${o[1]}</span><span>🥉${o[2]}</span><span>💀${o[3]}</span>
-                </div></div><h3>Bilanz</h3>`;
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.8rem; color:#ffd700;">1. Platz</span>
+                        <span>🥇 ${finalOrder[0]}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.8rem; color:#c0c0c0;">2. Platz</span>
+                        <span>🥈 ${finalOrder[1]}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.8rem; color:#cd7f32;">3. Platz</span>
+                        <span>🥉 ${finalOrder[2]}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="font-size:0.8rem; color:#ff4444;">Vierter</span>
+                        <span>💀 ${finalOrder[3]}</span>
+                    </div>
+                </div>
+            </div>
+            <h3>Bilanz</h3>`;
             
             data.players.forEach(p => {
                 let col = p.payout > 0 ? "#00ff00" : (p.payout < 0 ? "#ff0000" : "#fff");
