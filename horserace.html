@@ -6,21 +6,38 @@
     <title>MBA Derby Multiplayer</title>
     <style>
         body { 
-            background-color: #050505; color: #fff; font-family: 'Courier New', monospace; 
-            margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            background-color: #000; /* Tiefschwarz wie Snake */
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+            overflow-x: hidden; /* Verhindert seitliches Scrollen des Body */
         }
 
-        /* --- UI COMPONENTS --- */
-        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 10px 0; font-size: 1.5rem; text-align: center;}
+        /* --- UI COMPONENTS (SNAKE STYLE) --- */
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 60px 0 20px 0; font-size: 2rem; text-align: center;}
         .highlight { color: #ffff00; font-weight: bold; }
         
+        /* HOME BUTTON (SNAKE STYLE) */
         .btn-home {
+            position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
             padding: 8px 12px; border-radius: 5px; cursor: pointer;
-            font-family: 'Courier New', monospace; font-weight: bold;
-            margin-bottom: 20px; align-self: flex-start;
-            font-size: 1.2rem; text-decoration: none; display: inline-block;
+            font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
+            text-decoration: none; font-size: 1rem;
         }
+
+        /* STATUS ANZEIGE (SNAKE STYLE) */
+        #status-display {
+            position: absolute; top: 15px; right: 15px;
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+        }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
         .btn { 
             background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
@@ -35,13 +52,21 @@
 
         input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
 
-        /* --- VIEWS --- */
-        .view { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
+        /* --- VIEWS (FULL WIDTH FIX) --- */
+        .view { 
+            display: none; 
+            width: 95%; /* Nutzt fast die ganze Breite */
+            max-width: 100%; /* Keine 1000px Begrenzung mehr */
+            flex-direction: column; 
+            align-items: center; 
+            padding: 10px; 
+            box-sizing: border-box; 
+        }
         .view.active { display: flex; }
 
         /* --- LOBBY LISTE --- */
         .lobby-card { 
-            background: #1a1a1a; border: 1px solid #444; padding: 15px; margin: 10px 0; width: 100%; 
+            background: #111; border: 1px solid #444; padding: 15px; margin: 10px auto; width: 100%; max-width: 800px;
             display: flex; justify-content: space-between; align-items: center; 
         }
 
@@ -53,15 +78,20 @@
         }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
 
-        /* --- GAME GRID --- */
+        /* --- GAME GRID (HORIZONTAL) --- */
         #race-container {
             width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
+            display: flex; justify-content: center; /* Zentriert das Grid */
         }
         .race-grid {
             display: grid;
-            grid-template-columns: 70px repeat(7, 1fr) 70px; /* Start | 7 Felder | Ziel */
+            /* Breitere Spalten für liegende Karten */
+            grid-template-columns: 70px repeat(7, 1fr) 70px; 
+            /* Niedrigere Zeilen für liegende Karten */
             grid-template-rows: 50px repeat(4, 50px); 
-            gap: 5px; min-width: 600px; 
+            gap: 5px; 
+            min-width: 800px; /* Mindestbreite damit es scrollbar bleibt auf Handy */
+            width: 100%; /* Nimmt verfügbaren Platz */
             border: 2px solid #333; padding: 10px; background: #111;
         }
 
@@ -69,9 +99,10 @@
         .cell-penalty { border-bottom: 2px solid #ff0000; }
         .cell-goal { background: repeating-linear-gradient(45deg, #222, #222 10px, #000 10px, #000 20px); border-left: 2px solid #fff; }
 
-        /* --- CARDS --- */
+        /* --- CARDS (HORIZONTAL) --- */
         .card {
-            width: 56px; height: 40px; background: white; border-radius: 4px; color: black; 
+            width: 56px; height: 40px; /* QUERFORMAT */
+            background: white; border-radius: 4px; color: black; 
             font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1.2rem;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5); user-select: none;
         }
@@ -82,7 +113,7 @@
         .suit-red { color: #d32f2f; }
         .suit-black { color: #000; }
 
-        /* --- BETTING (NEU: FARBEN) --- */
+        /* --- BETTING --- */
         .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         
         .bet-option { 
@@ -91,14 +122,13 @@
             transition: transform 0.2s;
             box-shadow: 0 0 5px rgba(255,255,255,0.1);
         }
-        /* Spezifische Farben für die Buttons */
         .bet-option.suit-red { color: #d32f2f; border-color: #d32f2f; }
         .bet-option.suit-black { color: #000; border-color: #555; }
 
         .bet-option:hover { transform: scale(1.1); background: #fff; }
         .bet-option.selected { 
             background: #fff; 
-            box-shadow: 0 0 15px currentColor; /* Leuchtet in der Farbe des Suits */
+            box-shadow: 0 0 15px currentColor; 
             transform: scale(1.1); 
             border-width: 3px;
         }
@@ -118,11 +148,13 @@
 </head>
 <body>
 
+    <button onclick="window.location.href='lobby.html'" class="btn-home">🏠 HOME</button>
+    <div id="status-display" class="status-online">ONLINE 🟢</div>
+
     <div id="view-start" class="view active">
-        <button onclick="window.location.href='lobby.html'" class="btn-home">🏠</button>
         <h1>🐎 MULTIPLAYER DERBY</h1>
         <p>Erstelle eine Runde oder tritt bei.</p>
-        <div style="width: 100%; margin: 20px 0;">
+        <div style="width: 100%; max-width: 800px; margin: 20px 0;">
             <h3>Offene Lobbys</h3>
             <div id="lobby-list">Lade...</div>
         </div>
@@ -155,7 +187,7 @@
     </div>
 
     <div id="view-race" class="view">
-        <div style="display: flex; justify-content: space-between; width: 100%;">
+        <div style="display: flex; justify-content: space-between; width: 100%; max-width: 1000px;">
             <span>🏁 ZIEL: 8 Felder</span>
             <span id="race-status">Rennen läuft...</span>
         </div>
@@ -173,7 +205,7 @@
 
     <div id="view-result" class="view">
         <h1>ERGEBNIS</h1>
-        <div id="result-list" style="width: 100%; max-width: 600px;"></div>
+        <div id="result-list" style="width: 100%; max-width: 800px;"></div>
         <button class="btn" onclick="window.location.href='lobby.html'" style="margin-top: 20px;">ZURÜCK ZUR LOBBY</button>
     </div>
 
@@ -201,6 +233,21 @@
         let lobbyUnsubscribe = null;
         let isHost = false;
         let myBetSuit = null;
+
+        // --- ONLINE STATUS ---
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('status-display');
+            if (navigator.onLine) {
+                statusEl.innerText = "ONLINE 🟢";
+                statusEl.className = "status-online";
+            } else {
+                statusEl.innerText = "OFFLINE 🔴";
+                statusEl.className = "status-offline";
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -265,7 +312,6 @@
         window.deleteLobby = async function() {
             if(confirm("Möchtest du diese Lobby wirklich löschen?")) {
                 await deleteDoc(doc(db, "lobbies", currentLobbyId));
-                // Der Snapshot Listener feuert bei 'delete' -> reload
             }
         }
 
@@ -366,9 +412,9 @@
             const data = snap.docs[0].data();
             const gs = data.gameState;
 
-            // FIX: UNENDLICHER STAPEL (RESHUFFLE)
+            // FIX: UNENDLICHER STAPEL
             if(gs.deck.length === 0) {
-                gs.deck = createDeck(); // Neues Deck erstellen (ohne Asse theoretisch, aber wir nehmen full deck zum ziehen)
+                gs.deck = createDeck();
             }
 
             const card = gs.deck.pop();
@@ -379,22 +425,19 @@
                 gs.positions[card.suit]++;
             }
 
-            // Finish check (Index 8 is goal)
+            // Finish check
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
                 gs.positions[card.suit] = 8; 
             }
 
-            // Penalty Logic Fix: ">=" (Sobald alle DRIN sind)
+            // Penalty Logic
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
             
             for(let i=0; i<7; i++) {
-                // i=0 ist Spalte 1. minPos muss >= 1 sein.
                 if(minPos >= (i+1) && !gs.penaltyRevealed[i]) {
                     gs.penaltyRevealed[i] = true;
                     const pCard = gs.penaltyCards[i];
-                    
-                    // Strafe: Zurück (wenn nicht im Ziel)
                     if(!gs.finishedOrder.includes(pCard.suit)) {
                         gs.positions[pCard.suit]--;
                     }
@@ -459,40 +502,18 @@
         }
 
         async function calculateResults(players, finishedOrder) {
-            // ... innerhalb von calculateResults ...
-            
             const updatedPlayers = players.map(p => {
-                const rankIndex = finishedOrder.indexOf(p.betSuit); 
-                let resultText = "";
-                let profit = 0;
+                const rank = finishedOrder.indexOf(p.betSuit); 
+                let profit = 0, txt = "";
                 
-                // HIER IST DIE LOGIK, DIE DU ÄNDERN MUSST:
-
-                if(rankIndex === 0) { 
-                    // 1. Platz: Mal 2 (5 -> 10)
-                    profit = p.betAmount * 2; 
-                    resultText = "SUPER (x2)"; 
-                }
-                else if(rankIndex === 1) { 
-                    // 2. Platz: Mal 1 (5 -> 5)
-                    profit = p.betAmount * 1; 
-                    resultText = "GUT (x1)"; 
-                }
-                else if(rankIndex === 2) { 
-                    // 3. Platz: Mal -1 (5 -> -5)
-                    profit = p.betAmount * -1; 
-                    resultText = "VERLOREN (-1x)"; 
-                }
-                else if(rankIndex === 3) { 
-                    // 4. Platz: Mal -2 (5 -> -10)
-                    profit = p.betAmount * -2; 
-                    resultText = "STRAFE (-2x)"; 
-                }
+                // DEINE ANGEPASSTE MULTIPLIKATOR LOGIK
+                if(rank === 0) { profit = p.betAmount * 2; txt = "SUPER (x2)"; }
+                else if(rank === 1) { profit = p.betAmount * 1; txt = "GUT (x1)"; }
+                else if(rank === 2) { profit = p.betAmount * -1; txt = "VERLOREN (-1x)"; }
+                else if(rank === 3) { profit = p.betAmount * -2; txt = "STRAFE (-2x)"; }
                 
-                return { ...p, payout: profit, resultText: resultText, rank: rankIndex + 1 };
+                return { ...p, payout: profit, resultText: txt };
             });
-
-            // ... Rest der Funktion bleibt gleich ...
             await updateDoc(doc(db, "lobbies", currentLobbyId), { players: updatedPlayers, state: 'finished' });
         }
 
