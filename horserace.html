@@ -444,10 +444,21 @@
                 }
             }
 
-            if(gs.finishedOrder.length === 4) {
+            // --- NEUE LOGIK: SPIELENDE BEI 3 PFERDEN ---
+            if(gs.finishedOrder.length === 3) {
+                // Spiel vorbei! Wir müssen nicht auf den Letzten warten.
+                // Wir finden heraus, wer fehlt, und setzen ihn auf Platz 4.
+                const allSuits = ['♦', '♥', '♠', '♣'];
+                const loser = allSuits.find(s => !gs.finishedOrder.includes(s));
+                
+                // Den Verlierer manuell ins Ziel-Array schieben
+                gs.finishedOrder.push(loser);
+
+                // Ergebnisse berechnen
                 calculateResults(data.players, gs.finishedOrder); 
                 return; 
             }
+            // -------------------------------------------
 
             await updateDoc(doc(db, "lobbies", currentLobbyId), { gameState: gs });
         }
