@@ -6,7 +6,7 @@
     <title>Super MBA Bros</title>
     <style>
         body { 
-            background-color: #111; 
+            background-color: #222; 
             color: #fff; 
             font-family: 'Courier New', monospace; 
             margin: 0; 
@@ -14,12 +14,11 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            touch-action: none; /* Wichtig für Mobile Game */
-            position: relative; 
+            touch-action: none; 
             overflow: hidden;
         }
 
-        /* --- STATUS ANZEIGE (LINKS) --- */
+        /* --- UI ELEMENTS --- */
         #status-display {
             position: absolute; top: 15px; left: 15px; 
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
@@ -28,7 +27,13 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- SIDEBAR --- */
+        #home-btn {
+            position: absolute; top: 15px; left: 120px; 
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 1000;
+        }
+
+        /* SIDEBAR STYLES */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
@@ -36,52 +41,51 @@
             padding: 20px; box-shadow: none; overflow-y: auto;
         }
         #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
-        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header { color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
         .close-btn { cursor: pointer; font-size: 1.5rem; }
-        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
+        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
-        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
+        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
             padding: 15px; border-radius: 50%; width: 60px; height: 60px;
             font-size: 1.5rem; cursor: pointer; z-index: 1900;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); display: flex; justify-content: center; align-items: center; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center;
         }
-        #toggle-users-btn:hover { transform: scale(1.1); background: #111; }
-        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
 
-        /* --- GAME UI --- */
+        /* GAME STYLES */
         .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
-        canvas { border: 4px solid #808080; background: linear-gradient(#87CEEB, #E0F6FF); max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); image-rendering: pixelated; }
+        
+        canvas { 
+            border: 4px solid #fff; 
+            border-radius: 4px;
+            background: #5c94fc; /* Mario Sky Blue */
+            max-width: 100%; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            image-rendering: pixelated; /* WICHTIG für Retro Look */
+        }
         
         .highscore-box { width: 100%; margin-top: 20px; border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; }
         table { border-collapse: collapse; width: 100%; color: white; }
-        th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
+        th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; }
         .highlight { color: #00ff00; font-weight: bold; }
-        
-        #jump-btn {
-            display: none; /* Nur Mobile */
-            margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: none; 
-            color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px;
-        }
         .hidden { display: none !important; }
+
+        #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; }
 
         @media (max-width: 600px) {
             #home-btn { top: 60px !important; left: 15px !important; }
             h1 { margin-top: 100px; }
-            #jump-btn { display: block; } /* Jump Button am Handy zeigen */
+            #jump-btn { display: block; }
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <button id="home-btn" onclick="window.location.href='lobby.html'" style="position: absolute; top: 15px; left: 120px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
-        🏠 HOME
-    </button>
-
+    <button id="home-btn" onclick="window.location.href='lobby.html'">🏠 HOME</button>
     <div id="status-display" class="status-online">ONLINE 🟢</div>
 
     <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
@@ -91,21 +95,22 @@
     </div>
 
     <div class="main-layout">
-        
         <div id="start-screen" style="text-align: center;">
-            <h1 style="color: #ff0000; font-size: 3rem; text-shadow: 2px 2px #fff; margin: 0;">SUPER MBA BROS</h1>
-            <p style="color: #888;">RUNNER EDITION</p>
-            <h2 id="welcome-msg" style="margin-top: 30px;">Lade Profil...</h2>
-            <p style="color: #00ff00; font-size: 0.9rem;">[LEERTASTE] oder [TAP] zum Springen</p>
-            <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #000; color: #00ff00; border: 2px solid #00ff00; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px rgba(0,255,0,0.3);">
+            <h1 style="color: #ff0000; font-size: 3rem; text-shadow: 4px 4px 0px #000; margin: 0; font-family: Impact, sans-serif; letter-spacing: 2px;">SUPER MBA BROS</h1>
+            <div style="background: #e52521; color: white; display: inline-block; padding: 5px 15px; font-weight: bold; transform: rotate(-3deg); border: 2px solid white; margin-bottom: 20px;">RUNNER EDITION</div>
+            
+            <h2 id="welcome-msg">Lade Profil...</h2>
+            <p style="color: #fff; font-size: 0.9rem; background: #000; display: inline-block; padding: 5px;">[LEERTASTE] oder [TAP] zum Springen</p>
+            <br>
+            <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #00aa00; color: #fff; border: 4px solid #fff; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #006600; transition: all 0.1s;">
                 START RUN
             </button>
         </div>
 
         <div id="game-view" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-            <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
-                <span id="displayName">Mario: ...</span>
-                <span>Score: <span id="score-display" class="highlight">0</span></span>
+            <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; background: #000; padding: 5px; box-sizing: border-box; border: 2px solid #fff;">
+                <span id="displayName" style="color:#fff;">MARIO</span>
+                <span style="color:#fff;">SCORE <span id="score-display" style="color:#ffcc00;">000000</span></span>
             </div>
             <canvas id="gameCanvas" width="600" height="300"></canvas>
             <button id="jump-btn" ontouchstart="userJump(event)" onclick="userJump(event)">JUMP 🦘</button>
@@ -113,9 +118,7 @@
 
         <div class="highscore-box">
             <h3 style="color:#00ff00; text-align: center; margin: 0 0 10px 0;">🏆 BESTENLISTE</h3>
-            <table>
-                <tbody id="leaderboard-body"><tr><td>Lade Daten...</td></tr></tbody>
-            </table>
+            <table><tbody id="leaderboard-body"><tr><td>Lade Daten...</td></tr></tbody></table>
         </div>
     </div>
 
@@ -124,7 +127,6 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // FIREBASE SETUP
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -141,7 +143,7 @@
         let playerName = "Gast";
         let gameIsRunning = false;
 
-        // --- PRESENCE & UI (Kopiert von Horserace) ---
+        // --- PRESENCE & UI ---
         function updateOnlineStatus() {
             const el = document.getElementById('status-display');
             if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; loadLeaderboard(); }
@@ -182,7 +184,7 @@
             if(user) {
                 playerName = user.email.replace("@mba-arcade.com", "");
                 document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
-                document.getElementById('displayName').innerText = "Runner: " + playerName;
+                document.getElementById('displayName').innerText = playerName.toUpperCase();
                 startPresenceSystem(user.email, playerName);
                 loadLeaderboard();
             } else {
@@ -198,11 +200,16 @@
         let score = 0;
         let gameLoop;
         let speed = 5;
+        let walkCycle = 0;
 
+        // ASSETS GENERATION (Keine externen Bilder nötig!)
+        // Wir zeichnen Pixel-Art direkt auf den Canvas
+        
         // ENTITIES
-        const mario = { x: 50, y: 200, width: 30, height: 40, dy: 0, jumpPower: -12, grounded: false, color: 'red' };
-        const groundHeight = 40;
+        const mario = { x: 50, y: 200, width: 30, height: 30, dy: 0, jumpPower: -13, grounded: false };
+        const groundHeight = 50;
         let obstacles = [];
+        let clouds = [];
 
         function startGame() {
             document.getElementById('start-screen').classList.add('hidden');
@@ -217,25 +224,31 @@
             mario.y = canvas.height - groundHeight - mario.height;
             mario.dy = 0;
             obstacles = [];
+            // Initiale Wolken
+            clouds = [{x: 100, y: 50}, {x: 400, y: 80}, {x: 700, y: 40}];
         }
 
         function userJump(e) {
-            if(e) e.preventDefault(); // Verhindert Scrollen bei Touch
+            if(e) e.preventDefault();
             if(mario.grounded) {
                 mario.dy = mario.jumpPower;
                 mario.grounded = false;
             }
         }
-        window.userJump = userJump; // Für HTML Button
+        window.userJump = userJump; 
         document.addEventListener('keydown', (e) => { if(e.code === 'Space') userJump(); });
 
         function loop() {
             if(!gameIsRunning) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             frame++;
+            if(frame % 10 === 0) walkCycle = (walkCycle + 1) % 2; // Animation Takt
+
+            // BACKGROUND DEKO
+            drawClouds();
 
             // PHYSICS
-            mario.dy += 0.6; // Gravity
+            mario.dy += 0.7; // Gravity
             mario.y += mario.dy;
 
             // Ground Collision
@@ -245,71 +258,143 @@
                 mario.grounded = true;
             }
 
-            // DRAW GROUND
-            ctx.fillStyle = '#654321'; // Dirt
-            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-            ctx.fillStyle = '#00ff00'; // Grass
-            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
-
-            // OBSTACLES (Logic)
-            // Spawn Pipe alle 100-150 Frames
+            // OBSTACLE LOGIC
             if (frame % Math.floor(Math.random() * 50 + 100) === 0) {
-                let height = Math.random() * 50 + 30;
-                obstacles.push({ x: canvas.width, y: canvas.height - groundHeight - height, width: 30, height: height, passed: false });
+                let height = Math.random() > 0.5 ? 40 : 60; // Kleine oder große Röhre
+                obstacles.push({ x: canvas.width, y: canvas.height - groundHeight - height, width: 40, height: height, passed: false });
             }
 
-            // Draw & Update Obstacles
+            // UPDATE OBSTACLES
             for (let i = 0; i < obstacles.length; i++) {
                 let obs = obstacles[i];
                 obs.x -= speed;
+                drawPipe(obs.x, obs.y, obs.width, obs.height);
 
-                // Draw Pipe (Green with darker outline)
-                ctx.fillStyle = '#00AA00';
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                ctx.strokeStyle = '#004400';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
-
-                // Collision Detection
-                if (mario.x < obs.x + obs.width &&
-                    mario.x + mario.width > obs.x &&
-                    mario.y < obs.y + obs.height &&
+                // Collision Box (etwas kleiner als die Grafik für Fairness)
+                if (mario.x + 5 < obs.x + obs.width &&
+                    mario.x + mario.width - 5 > obs.x &&
+                    mario.y + 5 < obs.y + obs.height &&
                     mario.y + mario.height > obs.y) {
                     gameOver();
                 }
 
-                // Remove off-screen
                 if (obs.x + obs.width < 0) {
                     obstacles.shift();
                     i--;
                 }
             }
 
-            // DRAW MARIO (Simple Pixel Art Style Rects)
-            ctx.fillStyle = 'red'; // Hat/Shirt
-            ctx.fillRect(mario.x, mario.y, mario.width, mario.height/2);
-            ctx.fillStyle = 'blue'; // Pants
-            ctx.fillRect(mario.x, mario.y + mario.height/2, mario.width, mario.height/2);
-            // Eye
-            ctx.fillStyle = 'white'; ctx.fillRect(mario.x + 20, mario.y + 5, 5, 5);
+            drawGround();
+            drawMario(mario.x, mario.y);
 
             // SCORE
             score = Math.floor(frame / 5);
-            document.getElementById('score-display').innerText = score;
+            document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
             
-            // Speed up slightly
             if(frame % 500 === 0) speed += 0.5;
 
             gameLoop = requestAnimationFrame(loop);
+        }
+
+        // --- DRAWING FUNCTIONS (PIXEL ART) ---
+
+        function drawMario(x, y) {
+            // Einfacher Pixel-Mario aus Rechtecken
+            // Körper / Overalls
+            ctx.fillStyle = '#ff0000'; // Shirt Rot
+            ctx.fillRect(x + 5, y + 10, 20, 10);
+            ctx.fillStyle = '#0000aa'; // Hose Blau
+            ctx.fillRect(x + 8, y + 20, 14, 8);
+            
+            // Beine (Animiert)
+            if(mario.grounded && walkCycle === 0) {
+                ctx.fillRect(x + 5, y + 28, 8, 4); // Linker Fuß
+            } else if (mario.grounded && walkCycle === 1) {
+                ctx.fillRect(x + 18, y + 28, 8, 4); // Rechter Fuß
+            } else {
+                // Jump Pose
+                ctx.fillRect(x + 2, y + 25, 8, 5); 
+                ctx.fillRect(x + 20, y + 22, 8, 5);
+            }
+
+            // Kopf
+            ctx.fillStyle = '#ffccaa'; // Haut
+            ctx.fillRect(x + 5, y, 20, 10);
+            ctx.fillStyle = '#ff0000'; // Mütze
+            ctx.fillRect(x + 5, y - 2, 22, 4);
+            ctx.fillRect(x + 5, y - 2, 12, 6);
+            
+            // Bart / Haare
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + 18, y + 6, 6, 2); // Bart
+            ctx.fillRect(x + 5, y + 6, 4, 4); // Koteletten
+        }
+
+        function drawPipe(x, y, w, h) {
+            // Röhren Körper
+            ctx.fillStyle = '#00aa00'; // Dunkelgrün
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#004400';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+            
+            // Röhren Kopf (Oben)
+            ctx.fillStyle = '#00cc00'; // Heller
+            ctx.fillRect(x - 2, y, w + 4, 15);
+            ctx.strokeRect(x - 2, y, w + 4, 15);
+            
+            // Glanzlicht
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(x + 5, y + 2, 4, h - 2);
+        }
+
+        function drawGround() {
+            // Boden Blöcke
+            ctx.fillStyle = '#c84c0c'; // Ziegelstein-Braun
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            
+            // Ziegelstein-Muster
+            ctx.fillStyle = '#000'; 
+            let offset = (frame * speed) % 40;
+            for(let i = -40; i < canvas.width; i+=40) {
+                ctx.fillRect(i - offset, canvas.height - groundHeight, 38, 38);
+                // Innerer Stein
+                ctx.fillStyle = '#e86a17';
+                ctx.fillRect(i - offset + 2, canvas.height - groundHeight + 2, 34, 34);
+                // Fugen
+                ctx.fillStyle = '#000';
+            }
+            
+            // Grüne Wiese oben drauf
+            ctx.fillStyle = '#00cc00';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'white';
+            clouds.forEach(c => {
+                c.x -= speed * 0.2; // Parallax Effekt (langsamer)
+                if(c.x < -100) c.x = canvas.width + 50;
+                
+                // Wolke Malen (3 Kreise)
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, 20, 0, Math.PI * 2);
+                ctx.arc(c.x + 25, c.y - 10, 25, 0, Math.PI * 2);
+                ctx.arc(c.x + 50, c.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
 
         function gameOver() {
             gameIsRunning = false;
             cancelAnimationFrame(gameLoop);
             
-            // Draw Explosion
-            ctx.fillStyle = "orange";
-            ctx.beginPath(); ctx.arc(mario.x + 15, mario.y + 20, 40, 0, Math.PI*2); ctx.fill();
+            // Todessound (Visuell)
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "30px Courier New";
+            ctx.fillText("GAME OVER", canvas.width/2 - 80, canvas.height/2);
             
             saveScore(score);
             setTimeout(() => {
@@ -324,30 +409,39 @@
             if (!navigator.onLine) return;
             const tbody = document.getElementById('leaderboard-body');
             try {
-                // Wir nutzen hier dieselbe "scores" Collection, könnten aber eine neue machen
-                // Um Konflikte zu vermeiden: Filtern wir oder nehmen einfach alles?
-                // Einfachheitshalber: Alles in einen Topf (MBA Arcade Gesamtscore) oder wir filtern nach Game?
-                // Für jetzt: Wir nutzen dieselbe Liste wie Snake. Wenn du trennen willst, sag Bescheid!
-                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+                // Filter: Nur Mario Scores! (Wir nutzen ein Feld 'game')
+                // ACHTUNG: Du musst in Firestore Rules 'game' erlauben, aber da wir 'allow create' haben, passt es meist.
+                // Besser: Wir filtern clientseitig oder machen einen Composite Index.
+                // Simpel: Wir laden Scores und filtern im JS für die Anzeige (bei kleinen Mengen ok)
+                
+                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(20)); 
                 const snap = await getDocs(q);
                 tbody.innerHTML = "";
                 let r = 1;
+                let count = 0;
                 snap.forEach(d => {
                     const e = d.data();
-                    let icon = r===1?"🥇":r===2?"🥈":r===3?"🥉":r+".";
-                    tbody.innerHTML += `<tr><td>${icon}</td><td>${e.name}</td><td class="highlight">${e.score}</td></tr>`;
-                    r++;
+                    // Nur Mario Scores anzeigen (oder alle, wenn game feld fehlt als fallback)
+                    if(e.game === "mario" && count < 5) { 
+                        let icon = r===1?"🥇":r===2?"🥈":r===3?"🥉":r+".";
+                        tbody.innerHTML += `<tr><td>${icon}</td><td>${e.name}</td><td class="highlight">${e.score}</td></tr>`;
+                        r++; count++;
+                    }
                 });
+                if(count === 0) tbody.innerHTML = "<tr><td>Noch keine Runs.</td></tr>";
             } catch(e){console.error(e);}
         }
 
         async function saveScore(p) {
             if(!navigator.onLine) return;
-            // Kleiner Anti-Cheat: Nur Score speichern wenn er logisch ist? 
-            // In Rules haben wir < 71. Bei Mario wird der Score schnell höher!
-            // ACHTUNG: Du musst deine Firestore Rules anpassen, wenn der Mario Score höher als 71 gehen darf!
             try {
-                await addDoc(collection(db, "scores"), { name: playerName, score: p, date: new Date().toLocaleDateString('de-DE'), game: "mario" });
+                // WICHTIG: 'game: "mario"' speichern, um zu filtern
+                await addDoc(collection(db, "scores"), { 
+                    name: playerName, 
+                    score: p, 
+                    date: new Date().toLocaleDateString('de-DE'), 
+                    game: "mario" 
+                });
                 loadLeaderboard();
             } catch(e){console.error("Score Save Error:", e);}
         }
