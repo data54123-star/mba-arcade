@@ -19,88 +19,79 @@
             overflow-x: hidden;
         }
 
-        /* --- STATUS ANZEIGE (NEU) --- */
+        /* --- STATUS ANZEIGE (LINKS) --- */
         #status-display {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            z-index: 1000;
-            border: 1px solid #333;
-            transition: all 0.3s;
+            position: absolute; top: 15px; left: 15px; 
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
         }
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- LAYOUT CONTAINER --- */
-        .main-layout {
-            display: flex;
-            flex-wrap: wrap; 
-            justify-content: center;
-            align-items: flex-start;
-            gap: 50px;
-            margin-top: 80px; 
-            width: 100%;
-            max-width: 1200px;
-            padding: 20px;
-            box-sizing: border-box;
+        /* --- ACTIVE USER SIDEBAR --- */
+        #user-sidebar {
+            position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
+            background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; z-index: 2000;
+            transition: right 0.3s ease-in-out, border-color 0.3s; padding: 20px; box-shadow: none; overflow-y: auto;
         }
+        #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
 
+        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { cursor: pointer; font-size: 1.5rem; }
+        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
+        .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
+        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
+
+        /* FLOATING BUTTON */
+        #toggle-users-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #000; color: #00ff00; border: 2px solid #00ff00;
+            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
+            font-size: 1.5rem; cursor: pointer; z-index: 1900;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); display: flex; justify-content: center; align-items: center; transition: all 0.2s;
+        }
+        #toggle-users-btn:hover { transform: scale(1.1); background: #111; }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
+
+        /* --- LAYOUT CONTAINER --- */
+        .main-layout { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 50px; margin-top: 80px; width: 100%; max-width: 1200px; padding: 20px; box-sizing: border-box; }
         .left-column { flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; }
         .right-column { width: 350px; min-width: 300px; }
-
-        /* --- TABELLEN DESIGN --- */
         .highscore-box { border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
         table { border-collapse: collapse; width: 100%; color: white; }
         th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 15px; text-transform: uppercase; }
         tr:last-child td { border-bottom: none; }
-
-        /* --- SPIEL ELEMENTE --- */
         canvas { border: 4px solid #808080; background-color: #111; max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .controls { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px; margin-top: 20px; }
         .ctrl-btn { width: 60px; height: 60px; background: #333; border: 2px solid #808080; color: white; font-size: 1.5rem; border-radius: 10px; cursor: pointer; user-select: none; }
         .up { grid-column: 2; grid-row: 1; } .left { grid-column: 1; grid-row: 2; } .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
-
-        /* --- UTILS --- */
-        .hidden { display: none !important; }
-        .highlight { color: #00ff00; font-weight: bold; }
-        
-        @media (max-width: 800px) {
-            .main-layout { flex-direction: column; align-items: center; }
-            .right-column { width: 100%; order: 2; } 
-            .left-column { width: 100%; order: 1; }
-        }
+        .hidden { display: none !important; } .highlight { color: #00ff00; font-weight: bold; }
+        @media (max-width: 800px) { .main-layout { flex-direction: column; align-items: center; } .right-column { width: 100%; order: 2; } .left-column { width: 100%; order: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <button onclick="window.location.href='lobby.html'" style="
-        position: absolute; top: 15px; left: 15px; 
-        background: #000; color: #00ff00; border: 1px solid #00ff00; 
-        padding: 8px 12px; border-radius: 5px; cursor: pointer;
-        font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
+    <button onclick="window.location.href='lobby.html'" style="position: absolute; top: 15px; left: 120px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
         🏠 HOME
     </button>
 
     <div id="status-display" class="status-online">ONLINE 🟢</div>
 
+    <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
+    <div id="user-sidebar">
+        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
+        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
+    </div>
+
     <div class="main-layout">
-        
         <div class="left-column">
-            
             <div id="start-screen" style="text-align: center; padding: 40px 0;">
                 <h1 style="color: #00ff00; font-size: 3.5rem; text-shadow: 0 0 20px rgba(0,255,0,0.5); margin: 0;">MBA SNAKE</h1>
                 <p style="color: #888; margin-top: -10px; letter-spacing: 2px;">GLOBAL EDITION</p>
                 <h2 id="welcome-msg" style="color: white; margin-top: 40px; font-size: 1.5rem;">Lade Profil...</h2>
-                <button id="btn-start-game" style="
-                    margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; 
-                    background: #000; color: #00ff00; border: 2px solid #00ff00; 
-                    cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
-                    box-shadow: 0 0 15px rgba(0,255,0,0.3); transition: all 0.2s;">
+                <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #000; color: #00ff00; border: 2px solid #00ff00; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; box-shadow: 0 0 15px rgba(0,255,0,0.3); transition: all 0.2s;">
                     SPIEL STARTEN
                 </button>
             </div>
@@ -122,7 +113,7 @@
 
         <div class="right-column">
             <div class="highscore-box">
-                <h2 style="color:#00ff00; text-align: center; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">🏆 TOP 10</h2>
+                <h2 style="color:#00ff00; text-align: center; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">🏆 SNAKE TOP 10</h2>
                 <table>
                     <thead><tr><th style="width: 15%">#</th><th>Name</th><th>Score</th></tr></thead>
                     <tbody id="leaderboard-body"><tr><td colspan="3">Lade Daten...</td></tr></tbody>
@@ -132,72 +123,175 @@
     </div>
 
     <script type="module">
-        import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";import{getFirestore,collection,addDoc,query,orderBy,limit,getDocs}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        let gameIsRunning = false;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        document.getElementById('start-screen').classList.remove('hidden');
+        document.getElementById('game-view').classList.add('hidden');
         
-        let _0x9f=false;
-        const firebaseConfig={apiKey:"AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",authDomain:"mba-arcade.firebaseapp.com",projectId:"mba-arcade",storageBucket:"mba-arcade.firebasestorage.app",messagingSenderId:"497628563783",appId:"1:497628563783:web:a6a0a272fb97b60bbf6462"};
-        const app=initializeApp(firebaseConfig);const db=getFirestore(app);const auth=getAuth(app);
-        
-        document.getElementById('start-screen').classList.remove('hidden');document.getElementById('game-view').classList.add('hidden');
-        let playerName="Gast";
+        let playerName = "Gast";
 
-        function updateOnlineStatus(){const s=document.getElementById('status-display');if(navigator.onLine){s.innerText="ONLINE 🟢";s.className="status-online";loadLeaderboard();}else{s.innerText="OFFLINE 🔴";s.className="status-offline";}}
-        window.addEventListener('online',updateOnlineStatus);window.addEventListener('offline',updateOnlineStatus);updateOnlineStatus();
+        // --- UI FUNCTIONS ---
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('status-display');
+            if (navigator.onLine) {
+                statusEl.innerText = "ONLINE 🟢"; statusEl.className = "status-online";
+                loadLeaderboard();
+            } else {
+                statusEl.innerText = "OFFLINE 🔴"; statusEl.className = "status-offline";
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
 
-        onAuthStateChanged(auth,(u)=>{if(u){playerName=u.email.replace("@mba-arcade.com","");document.getElementById('welcome-msg').innerText="Hallo "+playerName+"!";document.getElementById('displayName').innerText="Spieler: "+playerName;loadLeaderboard();}else{window.location.href="index.html";}});
+        window.toggleSidebar = function() {
+            document.getElementById('user-sidebar').classList.toggle('open');
+        }
 
-        function _0x1b(){
+        // --- PRESENCE SYSTEM ---
+        function startPresenceSystem(userEmail, userName) {
+            const updateHeartbeat = async () => {
+                const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
+                await setDoc(doc(db, "online_status", userEmail), {
+                    name: userName, avatar: currentAvatar, last_seen: new Date().getTime()
+                });
+            };
+            updateHeartbeat();
+            setInterval(updateHeartbeat, 30000);
+
+            const q = query(collection(db, "online_status"));
+            onSnapshot(q, (snapshot) => {
+                const listContainer = document.getElementById('user-list-container');
+                const badge = document.getElementById('active-user-count');
+                const now = new Date().getTime();
+                const timeout = 2 * 60 * 1000;
+                let activeUsers = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (now - data.last_seen < timeout) activeUsers.push(data);
+                });
+                activeUsers.sort((a,b) => a.name.localeCompare(b.name));
+                badge.innerText = activeUsers.length;
+                if(activeUsers.length === 0) { listContainer.innerHTML = '<div style="color:#666; padding:10px;">Keine aktiven Signale.</div>'; return; }
+                let html = "";
+                activeUsers.forEach(u => {
+                    const isMe = (u.name === userName);
+                    const style = isMe ? "border-color:#00ff00; background: #002200;" : "";
+                    html += `<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold; color:white;">${u.name} ${isMe ? '(Du)' : ''}</div><div style="font-size:0.7rem; color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
+                });
+                listContainer.innerHTML = html;
+            });
+        }
+
+        // --- AUTH ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                playerName = user.email.replace("@mba-arcade.com", "");
+                document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
+                document.getElementById('displayName').innerText = "Spieler: " + playerName;
+                loadLeaderboard();
+                startPresenceSystem(user.email, playerName);
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // --- GAME LOGIC ---
+        function startGame() {
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-view').classList.remove('hidden');
-            setTimeout(()=>window.changeDirection({keyCode:0}),100);
-            _0x9f=true;
+            setTimeout(() => window.changeDirection({keyCode: 0}), 100);
+            gameIsRunning = true;
             initGame();
         }
 
-        async function loadLeaderboard(){if(!navigator.onLine)return;const t=document.getElementById('leaderboard-body');try{const q=query(collection(db,"scores"),orderBy("score","desc"),limit(10));const s=await getDocs(q);t.innerHTML="";let r=1;s.forEach((d)=>{const e=d.data();let rd=r+".";if(r===1)rd="🥇";if(r===2)rd="🥈";if(r===3)rd="🥉";t.innerHTML+=`<tr><td>${rd}</td><td style="text-align: left; padding-left: 20px;">${e.name}</td><td class="highlight">${e.score}</td></tr>`;r++;});if(s.empty)t.innerHTML="<tr><td colspan='3'>Noch keine Scores.</td></tr>";}catch(e){console.error(e);t.innerHTML="<tr><td colspan='3'>Fehler...</td></tr>";}}
-
-        async function _0x2a(p){
-            if(!_0x9f){console.warn("Security Alert 0x01");return;}
-            _0x9f=false;
-            if(!navigator.onLine)return;
-            try{await addDoc(collection(db,"scores"),{name:playerName,score:p,date:new Date().toLocaleDateString('de-DE')});loadLeaderboard();}catch(e){console.error(e);}
+        async function loadLeaderboard() {
+            if (!navigator.onLine) return;
+            const tbody = document.getElementById('leaderboard-body');
+            try {
+                // HIER GEÄNDERT: "scores_snake"
+                const q = query(collection(db, "scores_snake"), orderBy("score", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                tbody.innerHTML = "";
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const entry = doc.data();
+                    let rankDisplay = rank + ".";
+                    if(rank === 1) rankDisplay = "🥇"; if(rank === 2) rankDisplay = "🥈"; if(rank === 3) rankDisplay = "🥉";
+                    tbody.innerHTML += `<tr><td>${rankDisplay}</td><td style="text-align: left; padding-left: 20px;">${entry.name}</td><td class="highlight">${entry.score}</td></tr>`;
+                    rank++;
+                });
+                if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='3'>Noch keine Scores.</td></tr>";
+            } catch (e) { console.error(e); tbody.innerHTML = "<tr><td colspan='3'>Fehler...</td></tr>"; }
         }
 
-        const canvas=document.getElementById("gameCanvas");const ctx=canvas.getContext("2d");
-        let box=20;let snake=[];let food;let score=0;let d;let game;
+        async function saveScore(points) {
+            if (!gameIsRunning) { console.warn("Cheating erkannt!"); return; }
+            gameIsRunning = false;
+            if (!navigator.onLine) return;
+            try {
+                // HIER GEÄNDERT: "scores_snake"
+                await addDoc(collection(db, "scores_snake"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
+                loadLeaderboard();
+            } catch (e) { console.error("Save error", e); }
+        }
 
-        function initGame(){snake=[];snake[0]={x:9*box,y:10*box};score=0;d=undefined;createFood();if(game)clearInterval(game);game=setInterval(draw,100);}
-        function createFood(){food={x:Math.floor(Math.random()*19+1)*box,y:Math.floor(Math.random()*19+1)*box};for(let part of snake){if(part.x==food.x&&part.y==food.y)createFood();}}
+        /* --- SNAKE ENGINE --- */
+        const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
+        let box = 20; let snake = []; let food; let score = 0; let d; let game;
 
-        document.addEventListener("keydown",changeDirection);
-        function changeDirection(ev){let k=ev.keyCode;if(k==37&&d!="RIGHT")d="LEFT";else if(k==38&&d!="DOWN")d="UP";else if(k==39&&d!="LEFT")d="RIGHT";else if(k==40&&d!="UP")d="DOWN";}
-        window.changeDirection=changeDirection;
+        function initGame() { snake = []; snake[0] = { x: 9 * box, y: 10 * box }; score = 0; d = undefined; createFood(); if(game) clearInterval(game); game = setInterval(draw, 100); }
+        function createFood() { food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; for(let part of snake) { if(part.x == food.x && part.y == food.y) createFood(); } }
 
-        function draw(){
-            ctx.fillStyle="#000000";ctx.fillRect(0,0,canvas.width,canvas.height);
-            for(let i=0;i<snake.length;i++){ctx.fillStyle=(i==0)?"#33ff33":"#00ff00";ctx.strokeStyle="#000000";ctx.fillRect(snake[i].x,snake[i].y,box,box);ctx.strokeRect(snake[i].x,snake[i].y,box,box);}
-            ctx.fillStyle="#ff0000";ctx.fillRect(food.x,food.y,box,box);
-            let sx=snake[0].x;let sy=snake[0].y;
-            if(d=="LEFT")sx-=box;if(d=="UP")sy-=box;if(d=="RIGHT")sx+=box;if(d=="DOWN")sy+=box;
-            if(sx==food.x&&sy==food.y){score++;createFood();}else{snake.pop();}
-            let nh={x:sx,y:sy};
+        document.addEventListener("keydown", changeDirection);
+        function changeDirection(event) {
+            let key = event.keyCode;
+            if(key == 37 && d != "RIGHT") d = "LEFT"; else if(key == 38 && d != "DOWN") d = "UP";
+            else if(key == 39 && d != "LEFT") d = "RIGHT"; else if(key == 40 && d != "UP") d = "DOWN";
+        }
+        window.changeDirection = changeDirection; 
 
-            if(sx<0||sx>=canvas.width||sy<0||sy>=canvas.height||collision(nh,snake)){
+        function draw() {
+            ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#33ff33" : "#00ff00"; ctx.strokeStyle = "#000000";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box); ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+            ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
+            let snakeX = snake[0].x; let snakeY = snake[0].y;
+            if(d == "LEFT") snakeX -= box; if(d == "UP") snakeY -= box; if(d == "RIGHT") snakeX += box; if(d == "DOWN") snakeY += box;
+            if(snakeX == food.x && snakeY == food.y) { score++; createFood(); } else { snake.pop(); }
+            let newHead = { x: snakeX, y: snakeY };
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
                 clearInterval(game);
-                let cx=sx;let cy=sy;
-                if(cx<0)cx=0;if(cx>=canvas.width)cx=canvas.width-box;if(cy<0)cy=0;if(cy>=canvas.height)cy=canvas.height-box;
-                ctx.fillStyle="#ff0000";ctx.fillRect(cx,cy,box,box);ctx.strokeStyle="#ffffff";ctx.strokeRect(cx,cy,box,box);
-                _0x2a(score); 
-                
-                setTimeout(()=>{alert("Game Over! Score: "+score);document.getElementById('start-screen').classList.remove('hidden');document.getElementById('game-view').classList.add('hidden');},50);
+                let crashDrawX = Math.max(0, Math.min(canvas.width - box, snakeX));
+                let crashDrawY = Math.max(0, Math.min(canvas.height - box, snakeY));
+                ctx.fillStyle = "#ff0000"; ctx.fillRect(crashDrawX, crashDrawY, box, box); ctx.strokeStyle = "#ffffff"; ctx.strokeRect(crashDrawX, crashDrawY, box, box);
+                saveScore(score);
+                setTimeout(() => { alert("Game Over! Score: " + score); document.getElementById('start-screen').classList.remove('hidden'); document.getElementById('game-view').classList.add('hidden'); }, 50);
                 return;
             }
-            snake.unshift(nh);document.getElementById("score").innerText=score;
+            snake.unshift(newHead); document.getElementById("score").innerText = score;
         }
-        function collision(h,a){for(let i=0;i<a.length;i++){if(h.x==a[i].x&&h.y==a[i].y)return true;}return false;}
-        
-        document.getElementById('btn-start-game').addEventListener('click',_0x1b);
+        function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
     </script>
-
 </body>
 </html>
