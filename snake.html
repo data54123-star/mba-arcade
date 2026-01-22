@@ -96,7 +96,7 @@
                 <h1 style="color: #00ff00; font-size: 3.5rem; text-shadow: 0 0 20px rgba(0,255,0,0.5); margin: 0;">MBA SNAKE</h1>
                 <p style="color: #888; margin-top: -10px; letter-spacing: 2px;">GLOBAL EDITION</p>
                 <h2 id="welcome-msg" style="color: white; margin-top: 40px; font-size: 1.5rem;">Lade Profil...</h2>
-                <button onclick="startGame()" style="
+                <button id="btn-start-game" style="
                     margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; 
                     background: #000; color: #00ff00; border: 2px solid #00ff00; 
                     cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
@@ -132,9 +132,12 @@
     </div>
 
     <script type="module">
+        // 1. ZUERST die Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // 2. DANN die Variablen
+        let gameIsRunning = false;
 
         // --- HIER WIEDER DEINE FIREBASE CONFIG EINFÜGEN! ---
         const firebaseConfig = {
@@ -184,12 +187,13 @@
             }
         });
 
-        window.startGame = function() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-view').classList.remove('hidden');
-            setTimeout(() => window.changeDirection({keyCode: 0}), 100); 
-            initGame();
-        }
+        function startGame() { // window. entfernt
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-view').classList.remove('hidden');
+                setTimeout(() => window.changeDirection({keyCode: 0}), 100);
+                gameIsRunning = true; // NEU: Spielstatus aktiv setzen
+                initGame();
+            }
 
         async function loadLeaderboard() {
             if (!navigator.onLine) return; // Nicht laden wenn offline
@@ -215,14 +219,20 @@
         }
 
         async function saveScore(points) {
-            if (!navigator.onLine) {
-                alert("Du bist offline! Score konnte nicht gespeichert werden.");
-                return;
-            }
-            try {
-                await addDoc(collection(db, "scores"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
-                loadLeaderboard(); 
-            } catch (e) { console.error("Save error", e); }
+             // NEU: Sicherheits-Check
+             if (!gameIsRunning) {
+                console.warn("Cheating erkannt! Speichern blockiert. 👮‍♂️");
+                 return;
+             }
+             gameIsRunning = false; // NEU: Status zurücksetzen
+
+             if (!navigator.onLine) {
+              // ... (Rest bleibt gleich) ...
+             }
+             try {
+                  await addDoc(collection(db, "scores"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
+                  loadLeaderboard();
+              } catch (e) { console.error("Save error", e); }
         }
 
         /* --- SNAKE LOGIK (unverändert) --- */
@@ -321,6 +331,8 @@
         }
 
         function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
+        // ... (Ende des Scripts) ...
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
     </script>
 </body>
 </html>
