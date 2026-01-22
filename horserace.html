@@ -23,11 +23,13 @@
             position: absolute; top: 15px; left: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
             z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+            height: 34px; box-sizing: border-box; /* Fixe Höhe für exaktes Alignment */
+            display: flex; align-items: center;
         }
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- ACTIVE USER SIDEBAR (FIXED) --- */
+        /* --- ACTIVE USER SIDEBAR --- */
         #user-sidebar {
             position: fixed; 
             top: 0; 
@@ -35,7 +37,7 @@
             width: 250px; 
             height: 100vh;
             background: rgba(0, 0, 0, 0.95);
-            border-left: 2px solid transparent; /* WICHTIG: Transparent wenn zu */
+            border-left: 2px solid transparent;
             z-index: 2000;
             transition: right 0.3s ease-in-out, border-color 0.3s;
             padding: 20px; 
@@ -44,7 +46,7 @@
         }
         #user-sidebar.open { 
             right: 0; 
-            border-left: 2px solid #00ff00; /* Grün wenn offen */
+            border-left: 2px solid #00ff00;
             box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); 
         }
 
@@ -86,16 +88,24 @@
         .bet-option:hover { background: #333; }
         .bet-option.selected { border-color: #00ff00; background: #002200; box-shadow: 0 0 10px #00ff00; }
 
+        /* LOBBY CONTAINER FIX (Zentrierung) */
+        #lobbies-container {
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Erzwingt mittige Ausrichtung der Kinder */
+            text-align: center;  /* Zentriert Text */
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* --- MOBILE FIXES --- */
         @media (max-width: 600px) {
-            /* Home Button verschieben */
             #home-btn {
                 top: 60px !important;
                 left: 15px !important;
             }
-            /* Überschrift verschieben */
             h1 {
                 margin-top: 100px;
             }
@@ -105,10 +115,17 @@
 <body>
 
     <button id="home-btn" onclick="window.location.href='lobby.html'" style="
-        position: absolute; top: 13px; left: 160px; 
+        position: absolute; 
+        top: 15px; /* Exakt wie Status */
+        left: 160px; 
+        margin: 0; /* WICHTIG: Entfernt Standard-Abstand */
+        height: 34px; /* Exakt wie Status */
+        font-size: 0.9rem; /* Exakt wie Status */
         background: #000; color: #00ff00; border: 1px solid #00ff00; 
-        padding: 8px 12px; border-radius: 5px; cursor: pointer; 
-        font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
+        padding: 0 12px; /* Padding angepasst für fixe Höhe */
+        border-radius: 5px; cursor: pointer; 
+        font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
+        display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
         🏠 HOME
     </button>
 
@@ -126,7 +143,7 @@
     <div id="view-lobby-list" class="view-section active">
         <p>Wähle eine Rennbahn oder erstelle eine neue:</p>
         <button onclick="createNewLobby()">🆕 Neue Lobby erstellen</button>
-        <div id="lobbies-container" style="width: 100%; margin-top: 20px;"></div>
+        <div id="lobbies-container"></div>
     </div>
 
     <div id="view-betting" class="view-section">
@@ -255,8 +272,8 @@
             onSnapshot(q, (snapshot) => {
                 const container = document.getElementById('lobbies-container');
                 container.innerHTML = "";
-                // Fix 2: Text zentrieren
-                if(snapshot.empty) { container.innerHTML = "<p style='text-align: center;'>Keine offenen Lobbys.</p>"; return; }
+                // Fix: Text wird durch CSS #lobbies-container zentriert
+                if(snapshot.empty) { container.innerHTML = "<p style='color:#888;'>Keine offenen Lobbys.</p>"; return; }
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const btn = document.createElement('button');
@@ -330,11 +347,7 @@
             // Add player to lobby
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId))); // Quick read to get current array
-            // Note: In real app use arrayUnion or transaction. Here we append to local copy for simplicity via update
-            // Correct way: use arrayUnion. 
-            // Since we can't import arrayUnion easily without full SDK config changes, we do a read-modify-write (risk of race condition but ok for small groups)
             
-            // Let's rely on simple update for now, hoping no concurrent writes
             const data = snap.docs[0].data();
             const newPlayers = data.players || [];
             // Remove if already exists
@@ -411,7 +424,6 @@
         }
 
         async function calculateResults(players, order) {
-            // Payouts: 1st=2x, 2nd=1x, 3rd=-1x, 4th=-2x (Strafschlucke)
             const updatedPlayers = players.map(p => {
                 let payout = 0;
                 let text = "";
@@ -445,8 +457,7 @@
             // Finish line marker
             const line = document.createElement('div');
             line.className = 'finish-line';
-            line.style.left = (8 * 11 + 20) + '%'; // Approx
-            // container.appendChild(line); // CSS line is better
+            line.style.left = (8 * 11 + 20) + '%'; 
 
             suits.forEach(suit => {
                 const lane = document.createElement('div');
@@ -455,7 +466,7 @@
                 
                 const horse = document.createElement('div');
                 horse.className = 'horse-marker';
-                horse.innerText = suit === '♦' || suit === '♥' ? suit + '🟥' : suit + '⬛'; // Color emoji hack
+                horse.innerText = suit === '♦' || suit === '♥' ? suit + '🟥' : suit + '⬛'; 
                 horse.style.color = suit === '♦' || suit === '♥' ? '#ff4444' : '#fff';
                 horse.id = `horse-${suit}`;
                 horse.style.left = '0%';
@@ -464,9 +475,6 @@
                 container.appendChild(lane);
             });
             
-            // Penalty Cards Row (Visual hack: extra lane or positioned absolute)
-            // Simplified: Just render penalty cards below track? No, usually on the side.
-            // Let's render markers on the track for penalties
             for(let i=0; i<7; i++) {
                 const marker = document.createElement('div');
                 marker.className = 'penalty-card';
@@ -486,7 +494,6 @@
                 if(el) el.style.left = (pos * 11) + '%';
             });
 
-            // Update Penalties
             for(let i=0; i<7; i++) {
                 const el = document.getElementById(`penalty-${i}`);
                 if(el) {
@@ -499,7 +506,6 @@
                 }
             }
             
-            // Last Card
             if(gs.lastDrawnCard) {
                 const lc = gs.lastDrawnCard;
                 const disp = document.getElementById('last-card-display');
@@ -513,7 +519,6 @@
             document.getElementById('view-result').classList.add('active');
             const list = document.getElementById('result-list');
             
-            // SAFETY FIX: Fehlende Pferde auffüllen
             let order = data.gameState.finishedOrder || [];
             const allSuits = ['♦', '♥', '♠', '♣'];
             const missing = allSuits.filter(suit => !order.includes(suit));
