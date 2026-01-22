@@ -105,7 +105,7 @@
 <body>
 
     <button id="home-btn" onclick="window.location.href='lobby.html'" style="
-        position: absolute; top: 15px; left: 160px; 
+        position: absolute; top: 13px; left: 160px; 
         background: #000; color: #00ff00; border: 1px solid #00ff00; 
         padding: 8px 12px; border-radius: 5px; cursor: pointer; 
         font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
@@ -255,7 +255,8 @@
             onSnapshot(q, (snapshot) => {
                 const container = document.getElementById('lobbies-container');
                 container.innerHTML = "";
-                if(snapshot.empty) { container.innerHTML = "<p>Keine offenen Lobbys.</p>"; return; }
+                // Fix 2: Text zentrieren
+                if(snapshot.empty) { container.innerHTML = "<p style='text-align: center;'>Keine offenen Lobbys.</p>"; return; }
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const btn = document.createElement('button');
