@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super MBA Bros</title>
+    <style>
+        body { 
+            background-color: #111; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            touch-action: none; /* Wichtig für Mobile Game */
+            position: relative; 
+            overflow: hidden;
+        }
+
+        /* --- STATUS ANZEIGE (LINKS) --- */
+        #status-display {
+            position: absolute; top: 15px; left: 15px; 
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+        }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+
+        /* --- SIDEBAR --- */
+        #user-sidebar {
+            position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
+            background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
+            z-index: 2000; transition: right 0.3s ease-in-out, border-color 0.3s;
+            padding: 20px; box-shadow: none; overflow-y: auto;
+        }
+        #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
+        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { cursor: pointer; font-size: 1.5rem; }
+        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
+        .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
+        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
+        #toggle-users-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #000; color: #00ff00; border: 2px solid #00ff00;
+            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
+            font-size: 1.5rem; cursor: pointer; z-index: 1900;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); display: flex; justify-content: center; align-items: center; transition: all 0.2s;
+        }
+        #toggle-users-btn:hover { transform: scale(1.1); background: #111; }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
+
+        /* --- GAME UI --- */
+        .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
+        canvas { border: 4px solid #808080; background: linear-gradient(#87CEEB, #E0F6FF); max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); image-rendering: pixelated; }
+        
+        .highscore-box { width: 100%; margin-top: 20px; border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; }
+        table { border-collapse: collapse; width: 100%; color: white; }
+        th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
+        th { color: #00ff00; border-bottom: 2px solid #00ff00; }
+        .highlight { color: #00ff00; font-weight: bold; }
+        
+        #jump-btn {
+            display: none; /* Nur Mobile */
+            margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: none; 
+            color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px;
+        }
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            #home-btn { top: 60px !important; left: 15px !important; }
+            h1 { margin-top: 100px; }
+            #jump-btn { display: block; } /* Jump Button am Handy zeigen */
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <button id="home-btn" onclick="window.location.href='lobby.html'" style="position: absolute; top: 15px; left: 120px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
+        🏠 HOME
+    </button>
+
+    <div id="status-display" class="status-online">ONLINE 🟢</div>
+
+    <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
+    <div id="user-sidebar">
+        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
+        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div id="start-screen" style="text-align: center;">
+            <h1 style="color: #ff0000; font-size: 3rem; text-shadow: 2px 2px #fff; margin: 0;">SUPER MBA BROS</h1>
+            <p style="color: #888;">RUNNER EDITION</p>
+            <h2 id="welcome-msg" style="margin-top: 30px;">Lade Profil...</h2>
+            <p style="color: #00ff00; font-size: 0.9rem;">[LEERTASTE] oder [TAP] zum Springen</p>
+            <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #000; color: #00ff00; border: 2px solid #00ff00; cursor: pointer; font-weight: bold; box-shadow: 0 0 15px rgba(0,255,0,0.3);">
+                START RUN
+            </button>
+        </div>
+
+        <div id="game-view" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+            <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
+                <span id="displayName">Mario: ...</span>
+                <span>Score: <span id="score-display" class="highlight">0</span></span>
+            </div>
+            <canvas id="gameCanvas" width="600" height="300"></canvas>
+            <button id="jump-btn" ontouchstart="userJump(event)" onclick="userJump(event)">JUMP 🦘</button>
+        </div>
+
+        <div class="highscore-box">
+            <h3 style="color:#00ff00; text-align: center; margin: 0 0 10px 0;">🏆 BESTENLISTE</h3>
+            <table>
+                <tbody id="leaderboard-body"><tr><td>Lade Daten...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // FIREBASE SETUP
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let playerName = "Gast";
+        let gameIsRunning = false;
+
+        // --- PRESENCE & UI (Kopiert von Horserace) ---
+        function updateOnlineStatus() {
+            const el = document.getElementById('status-display');
+            if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; loadLeaderboard(); }
+            else{ el.innerText="OFFLINE 🔴"; el.className="status-offline"; }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+        window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
+
+        function startPresenceSystem(userEmail, userName) {
+            const updateHeartbeat = async () => {
+                const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
+                await setDoc(doc(db, "online_status", userEmail), { name: userName, avatar: currentAvatar, last_seen: new Date().getTime() });
+            };
+            updateHeartbeat(); setInterval(updateHeartbeat, 30000);
+            
+            onSnapshot(query(collection(db, "online_status")), (snap) => {
+                const list = document.getElementById('user-list-container');
+                const badge = document.getElementById('active-user-count');
+                const now = new Date().getTime();
+                let active = [];
+                snap.forEach(d => { if(now - d.data().last_seen < 120000) active.push(d.data()); });
+                active.sort((a,b)=>a.name.localeCompare(b.name));
+                badge.innerText = active.length;
+                if(active.length===0){ list.innerHTML='<div style="color:#666;padding:10px;">Keine Signale.</div>'; return;}
+                let html = "";
+                active.forEach(u => {
+                    const style = (u.name===userName) ? "border-color:#00ff00; background:#002200;" : "";
+                    html+=`<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div style="font-size:0.7rem;color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
+                });
+                list.innerHTML = html;
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                playerName = user.email.replace("@mba-arcade.com", "");
+                document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
+                document.getElementById('displayName').innerText = "Runner: " + playerName;
+                startPresenceSystem(user.email, playerName);
+                loadLeaderboard();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // --- GAME ENGINE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let frame = 0;
+        let score = 0;
+        let gameLoop;
+        let speed = 5;
+
+        // ENTITIES
+        const mario = { x: 50, y: 200, width: 30, height: 40, dy: 0, jumpPower: -12, grounded: false, color: 'red' };
+        const groundHeight = 40;
+        let obstacles = [];
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            gameIsRunning = true;
+            resetGame();
+            loop();
+        }
+
+        function resetGame() {
+            frame = 0; score = 0; speed = 5;
+            mario.y = canvas.height - groundHeight - mario.height;
+            mario.dy = 0;
+            obstacles = [];
+        }
+
+        function userJump(e) {
+            if(e) e.preventDefault(); // Verhindert Scrollen bei Touch
+            if(mario.grounded) {
+                mario.dy = mario.jumpPower;
+                mario.grounded = false;
+            }
+        }
+        window.userJump = userJump; // Für HTML Button
+        document.addEventListener('keydown', (e) => { if(e.code === 'Space') userJump(); });
+
+        function loop() {
+            if(!gameIsRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frame++;
+
+            // PHYSICS
+            mario.dy += 0.6; // Gravity
+            mario.y += mario.dy;
+
+            // Ground Collision
+            if (mario.y + mario.height > canvas.height - groundHeight) {
+                mario.y = canvas.height - groundHeight - mario.height;
+                mario.dy = 0;
+                mario.grounded = true;
+            }
+
+            // DRAW GROUND
+            ctx.fillStyle = '#654321'; // Dirt
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            ctx.fillStyle = '#00ff00'; // Grass
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
+
+            // OBSTACLES (Logic)
+            // Spawn Pipe alle 100-150 Frames
+            if (frame % Math.floor(Math.random() * 50 + 100) === 0) {
+                let height = Math.random() * 50 + 30;
+                obstacles.push({ x: canvas.width, y: canvas.height - groundHeight - height, width: 30, height: height, passed: false });
+            }
+
+            // Draw & Update Obstacles
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.x -= speed;
+
+                // Draw Pipe (Green with darker outline)
+                ctx.fillStyle = '#00AA00';
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.strokeStyle = '#004400';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+
+                // Collision Detection
+                if (mario.x < obs.x + obs.width &&
+                    mario.x + mario.width > obs.x &&
+                    mario.y < obs.y + obs.height &&
+                    mario.y + mario.height > obs.y) {
+                    gameOver();
+                }
+
+                // Remove off-screen
+                if (obs.x + obs.width < 0) {
+                    obstacles.shift();
+                    i--;
+                }
+            }
+
+            // DRAW MARIO (Simple Pixel Art Style Rects)
+            ctx.fillStyle = 'red'; // Hat/Shirt
+            ctx.fillRect(mario.x, mario.y, mario.width, mario.height/2);
+            ctx.fillStyle = 'blue'; // Pants
+            ctx.fillRect(mario.x, mario.y + mario.height/2, mario.width, mario.height/2);
+            // Eye
+            ctx.fillStyle = 'white'; ctx.fillRect(mario.x + 20, mario.y + 5, 5, 5);
+
+            // SCORE
+            score = Math.floor(frame / 5);
+            document.getElementById('score-display').innerText = score;
+            
+            // Speed up slightly
+            if(frame % 500 === 0) speed += 0.5;
+
+            gameLoop = requestAnimationFrame(loop);
+        }
+
+        function gameOver() {
+            gameIsRunning = false;
+            cancelAnimationFrame(gameLoop);
+            
+            // Draw Explosion
+            ctx.fillStyle = "orange";
+            ctx.beginPath(); ctx.arc(mario.x + 15, mario.y + 20, 40, 0, Math.PI*2); ctx.fill();
+            
+            saveScore(score);
+            setTimeout(() => {
+                alert("Game Over! Score: " + score);
+                document.getElementById('start-screen').classList.remove('hidden');
+                document.getElementById('game-view').classList.add('hidden');
+            }, 100);
+        }
+
+        // --- HIGHSCORE LOGIC ---
+        async function loadLeaderboard() {
+            if (!navigator.onLine) return;
+            const tbody = document.getElementById('leaderboard-body');
+            try {
+                // Wir nutzen hier dieselbe "scores" Collection, könnten aber eine neue machen
+                // Um Konflikte zu vermeiden: Filtern wir oder nehmen einfach alles?
+                // Einfachheitshalber: Alles in einen Topf (MBA Arcade Gesamtscore) oder wir filtern nach Game?
+                // Für jetzt: Wir nutzen dieselbe Liste wie Snake. Wenn du trennen willst, sag Bescheid!
+                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+                const snap = await getDocs(q);
+                tbody.innerHTML = "";
+                let r = 1;
+                snap.forEach(d => {
+                    const e = d.data();
+                    let icon = r===1?"🥇":r===2?"🥈":r===3?"🥉":r+".";
+                    tbody.innerHTML += `<tr><td>${icon}</td><td>${e.name}</td><td class="highlight">${e.score}</td></tr>`;
+                    r++;
+                });
+            } catch(e){console.error(e);}
+        }
+
+        async function saveScore(p) {
+            if(!navigator.onLine) return;
+            // Kleiner Anti-Cheat: Nur Score speichern wenn er logisch ist? 
+            // In Rules haben wir < 71. Bei Mario wird der Score schnell höher!
+            // ACHTUNG: Du musst deine Firestore Rules anpassen, wenn der Mario Score höher als 71 gehen darf!
+            try {
+                await addDoc(collection(db, "scores"), { name: playerName, score: p, date: new Date().toLocaleDateString('de-DE'), game: "mario" });
+                loadLeaderboard();
+            } catch(e){console.error("Score Save Error:", e);}
+        }
+
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
+    </script>
+</body>
+</html>
