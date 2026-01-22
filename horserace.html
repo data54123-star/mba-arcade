@@ -2,191 +2,202 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Derby</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MBA Derby Multiplayer</title>
     <style>
-        body {
-            background-color: #1a1a1a;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
             overflow-x: hidden;
         }
 
-        /* --- STATUS ANZEIGE (LINKS) --- */
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 60px 0 20px 0; font-size: 2rem; text-align: center;}
+        .highlight { color: #ffff00; font-weight: bold; }
+        
+        /* HOME BUTTON */
+        .btn-home {
+            position: absolute; top: 15px; left: 15px; 
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
+            text-decoration: none; font-size: 1rem;
+        }
+
+        /* STATUS ANZEIGE */
         #status-display {
-            position: absolute; top: 15px; left: 15px;
+            position: absolute; top: 15px; right: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
             z-index: 1000; border: 1px solid #333; transition: all 0.3s;
-            height: 34px; box-sizing: border-box; /* Fixe Höhe für exaktes Alignment */
-            display: flex; align-items: center;
         }
-        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
-        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
-        /* --- ACTIVE USER SIDEBAR --- */
-        #user-sidebar {
-            position: fixed; 
-            top: 0; 
-            right: -320px; 
-            width: 250px; 
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
-            border-left: 2px solid transparent;
-            z-index: 2000;
-            transition: right 0.3s ease-in-out, border-color 0.3s;
-            padding: 20px; 
-            box-shadow: none; 
-            overflow-y: auto;
+        .btn { 
+            background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
+            cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
+            transition: all 0.2s;
         }
-        #user-sidebar.open { 
-            right: 0; 
-            border-left: 2px solid #00ff00;
-            box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); 
-        }
-
-        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .close-btn { cursor: pointer; font-size: 1.5rem; }
-        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
-        .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
-        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
-
-        /* FLOATING BUTTON */
-        #toggle-users-btn {
-            position: fixed; bottom: 20px; right: 20px;
-            background: #000; color: #00ff00; border: 2px solid #00ff00;
-            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
-            font-size: 1.5rem; cursor: pointer; z-index: 1900;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); display: flex; justify-content: center; align-items: center; transition: all 0.2s;
-        }
-        #toggle-users-btn:hover { transform: scale(1.1); background: #111; }
-        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
-
-        /* GAME LAYOUT */
-        .view-section { display: none; width: 100%; max-width: 800px; flex-direction: column; align-items: center; }
-        .active { display: flex; }
-        .card-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .card { width: 60px; height: 90px; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; background: white; color: black; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); position: relative; }
-        .card.red { color: red; } .card.black { color: black; }
-        .track-container { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-bottom: 20px; position: relative; }
-        .track-lane { display: flex; align-items: center; border-bottom: 1px solid #444; padding: 5px 0; position: relative; height: 60px; }
-        .horse-marker { font-size: 2rem; transition: left 0.5s ease-in-out; position: absolute; }
-        .penalty-card { width: 40px; height: 60px; border: 1px solid #666; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; background: #222; color: #fff; margin-left: 5px; position: absolute; }
-        .penalty-card.revealed { background: white; color: inherit; font-size: 1.2rem; }
-        .finish-line { position: absolute; right: 20px; top: 0; bottom: 0; width: 4px; background-color: #fff; z-index: 0; }
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
         
-        button { margin-top: 15px; padding: 12px 24px; font-size: 1rem; cursor: pointer; background: #333; color: white; border: 1px solid #666; font-family: inherit; font-weight: bold; }
-        button:hover { background: #444; border-color: white; }
+        .btn-danger { border-color: #ff4444; color: #ff4444; margin-top: 10px; }
+        .btn-danger:hover { background: #ff4444; color: #fff; }
+
+        input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
+
+        .view { display: none; width: 95%; max-width: 100%; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
+        .view.active { display: flex; }
+
+        .lobby-card { 
+            background: #111; border: 1px solid #444; padding: 15px; margin: 10px auto; width: 100%; max-width: 800px;
+            display: flex; justify-content: space-between; align-items: center; 
+        }
+
+        .player-list { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 20px 0; }
+        .player-chip { 
+            background: #222; border: 1px solid #444; padding: 10px; text-align: center; border-radius: 5px; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
+
+        /* GAME GRID */
+        #race-container {
+            width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
+            display: flex; justify-content: center;
+        }
+        .race-grid {
+            display: grid;
+            grid-template-columns: 70px repeat(7, 1fr) 70px; 
+            grid-template-rows: 50px repeat(4, 50px); 
+            gap: 5px; 
+            min-width: 800px; 
+            width: 100%; 
+            border: 2px solid #333; padding: 10px; background: #111;
+        }
+
+        .cell { border: 1px dashed #333; display: flex; justify-content: center; align-items: center; position: relative; }
+        .cell-penalty { border-bottom: 2px solid #ff0000; }
+        .cell-goal { background: repeating-linear-gradient(45deg, #222, #222 10px, #000 10px, #000 20px); border-left: 2px solid #fff; }
+
+        .card {
+            width: 56px; height: 40px; 
+            background: white; border-radius: 4px; color: black; 
+            font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1.2rem;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); user-select: none;
+        }
+        .card-back {
+            background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 5px, #d32f2f 5px, #d32f2f 10px);
+            border: 2px solid #fff;
+        }
+        .suit-red { color: #d32f2f; }
+        .suit-black { color: #000; }
+
+        .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         
-        .bet-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-bottom: 20px; }
-        .bet-option { background: #222; border: 2px solid #444; padding: 15px; text-align: center; cursor: pointer; border-radius: 8px; font-size: 1.2rem; }
-        .bet-option:hover { background: #333; }
-        .bet-option.selected { border-color: #00ff00; background: #002200; box-shadow: 0 0 10px #00ff00; }
+        .bet-option { 
+            background: #e0e0e0; border: 2px solid #999; 
+            padding: 10px; cursor: pointer; text-align: center; font-size: 2rem; border-radius: 5px; 
+            transition: transform 0.2s;
+            box-shadow: 0 0 5px rgba(255,255,255,0.1);
+        }
+        .bet-option.suit-red { color: #d32f2f; border-color: #d32f2f; }
+        .bet-option.suit-black { color: #000; border-color: #555; }
 
-        /* LOBBY CONTAINER FIX (Zentrierung) */
-        #lobbies-container {
-            width: 100%;
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Erzwingt mittige Ausrichtung der Kinder */
-            text-align: center;  /* Zentriert Text */
+        .bet-option:hover { transform: scale(1.1); background: #fff; }
+        .bet-option.selected { 
+            background: #fff; 
+            box-shadow: 0 0 15px currentColor; 
+            transform: scale(1.1); 
+            border-width: 3px;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* --- MOBILE FIXES --- */
-        @media (max-width: 600px) {
-            #home-btn {
-                top: 60px !important;
-                left: 15px !important;
-            }
-            h1 {
-                margin-top: 100px;
-            }
+        #action-area {
+            position: sticky; bottom: 0; background: rgba(0,0,0,0.9); width: 100%; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; border-top: 1px solid #333; z-index: 100;
         }
+        .last-card-anim {
+            width: 60px; height: 84px; font-size: 1.5rem; margin-bottom: 10px; border: 4px solid #fff;
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
     </style>
 </head>
 <body>
 
-    <button id="home-btn" onclick="window.location.href='lobby.html'" style="
-        position: absolute; 
-        top: 15px; /* Exakt wie Status */
-        left: 160px; 
-        margin: 0; /* WICHTIG: Entfernt Standard-Abstand */
-        height: 34px; /* Exakt wie Status */
-        font-size: 0.9rem; /* Exakt wie Status */
-        background: #000; color: #00ff00; border: 1px solid #00ff00; 
-        padding: 0 12px; /* Padding angepasst für fixe Höhe */
-        border-radius: 5px; cursor: pointer; 
-        font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
-        display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
-        🏠 HOME
-    </button>
-
+    <button onclick="window.location.href='lobby.html'" class="btn-home">🏠 HOME</button>
     <div id="status-display" class="status-online">ONLINE 🟢</div>
 
-    <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
-    <div id="user-sidebar">
-        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
-        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
-    </div>
-
-    <h1>🐎 DERBY</h1>
-    <h3 id="lobby-status">Lade Lobby...</h3>
-
-    <div id="view-lobby-list" class="view-section active">
-        <p>Wähle eine Rennbahn oder erstelle eine neue:</p>
-        <button onclick="createNewLobby()">🆕 Neue Lobby erstellen</button>
-        <div id="lobbies-container"></div>
-    </div>
-
-    <div id="view-betting" class="view-section">
-        <h3>Platziere deine Wette!</h3>
-        <p>Welches Ass gewinnt das Rennen?</p>
-        <div class="bet-grid">
-            <div class="bet-option" onclick="selectBet('♦')">♦ Karo</div>
-            <div class="bet-option" onclick="selectBet('♥')">♥ Herz</div>
-            <div class="bet-option" onclick="selectBet('♠')">♠ Pik</div>
-            <div class="bet-option" onclick="selectBet('♣')">♣ Kreuz</div>
+    <div id="view-start" class="view active">
+        <h1>🐎 MULTIPLAYER DERBY</h1>
+        <p>Erstelle eine Runde oder tritt bei.</p>
+        <div style="width: 100%; max-width: 800px; margin: 20px 0;">
+            <h3>Offene Lobbys</h3>
+            <div id="lobby-list">Lade...</div>
         </div>
-        <button id="btn-place-bet" style="display:none;" onclick="placeBet()">Wette bestätigen</button>
+        <button class="btn" onclick="createNewLobby()">NEUE LOBBY ERSTELLEN</button>
     </div>
 
-    <div id="view-waiting" class="view-section">
-        <h3>Warte auf Start...</h3>
-        <p>Der Host mischt die Karten.</p>
-        <div id="player-list-display"></div>
-        <div id="host-controls" style="display:none; border-top: 1px solid #444; margin-top: 20px; padding-top: 10px;">
-            <p style="color: #00ff00;">Du bist der Host!</p>
-            <button onclick="hostStartGame()">Rennen starten 🏁</button>
+    <div id="view-lobby" class="view">
+        <h2 id="lobby-title">Lobby</h2>
+        <p>Warte auf Spieler... (<span id="player-count">0</span>)</p>
+        <div class="player-list" id="lobby-players"></div>
+
+        <div id="betting-controls" style="width: 100%; max-width: 500px; text-align: center;">
+            <h3>DEIN EINSATZ</h3>
+            <div class="bet-grid">
+                <div class="bet-option suit-red" onclick="selectBet('♦', this)">♦</div>
+                <div class="bet-option suit-red" onclick="selectBet('♥', this)">♥</div>
+                <div class="bet-option suit-black" onclick="selectBet('♠', this)">♠</div>
+                <div class="bet-option suit-black" onclick="selectBet('♣', this)">♣</div>
+            </div>
+            <input type="number" id="bet-amount" placeholder="Coins" value="1" min="1" max="1000">
+            <button class="btn" id="btn-lock-bet" onclick="lockInBet()" style="margin-top: 15px;">WETTE PLATZIEREN</button>
+        </div>
+
+        <div id="host-controls" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; width: 100%; display: none;">
+            <p class="highlight">👑 DU BIST DER HOST</p>
+            <p id="host-status-msg" style="font-size: 0.9rem; color: #aaa;">Warte auf Einsätze...</p>
+            <button class="btn" id="btn-start-game" onclick="hostStartGame()" disabled>RENNEN STARTEN</button>
+            <button class="btn btn-danger" onclick="deleteLobby()">LOBBY AUFLÖSEN</button>
         </div>
     </div>
 
-    <div id="view-race" class="view-section">
-        <div class="track-container" id="track"></div>
-        <div id="host-draw-controls" style="display:none; text-align: center;">
-            <div style="margin-bottom: 10px; font-size: 1.2rem;">Letzte Karte: <span id="last-card-display">-</span></div>
-            <button onclick="hostDrawCard()" style="font-size: 1.2rem; padding: 20px; width: 100%;">KARTEN ZIEHEN 🃏</button>
+    <div id="view-race" class="view">
+        <div style="display: flex; justify-content: space-between; width: 100%; max-width: 1000px;">
+            <span>🏁 ZIEL: 8 Felder</span>
+            <span id="race-status">Rennen läuft...</span>
+        </div>
+        <div id="race-container">
+            <div id="grid-target" class="race-grid"></div>
+        </div>
+        <div id="action-area">
+            <div id="drawn-card-display"></div>
+            <div id="host-game-controls" style="display: none; width: 100%;">
+                <button class="btn" onclick="hostDrawCard()" style="width: 100%; font-size: 1.2rem; padding: 15px;">KARTE ZIEHEN 🃏</button>
+            </div>
+            <div id="client-wait-msg" style="color: #888;">Warte auf Host...</div>
         </div>
     </div>
 
-    <div id="view-result" class="view-section">
-        <h2 style="color: #00ff00; text-shadow: 0 0 10px #00ff00;">ERGEBNIS</h2>
-        <div id="result-list" style="width: 100%;"></div>
-        <button onclick="backToLobby()" style="margin-top: 30px; border-color: #00ff00; color: #00ff00;">ZURÜCK ZUR LOBBY</button>
+    <div id="view-result" class="view">
+        <h1>ERGEBNIS</h1>
+        <div id="result-list" style="width: 100%; max-width: 800px;"></div>
+        <button class="btn" onclick="window.location.href='lobby.html'" style="margin-top: 20px;">ZURÜCK ZUR LOBBY</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -200,12 +211,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        let currentUser = null;
         let currentLobbyId = null;
-        let playerName = "Gast";
-        let myBet = null;
         let isHost = false;
+        let myBetSuit = null;
+        let playerName = "Gast";
 
-        // --- GLOBAL UI ---
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) { statusEl.innerText = "ONLINE 🟢"; statusEl.className = "status-online"; } 
@@ -215,164 +226,164 @@
         window.addEventListener('offline', updateOnlineStatus);
         updateOnlineStatus();
 
-        window.toggleSidebar = function() {
-            document.getElementById('user-sidebar').classList.toggle('open');
-        }
-
-        // --- PRESENCE SYSTEM ---
-        function startPresenceSystem(userEmail, userName) {
-            const updateHeartbeat = async () => {
-                const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
-                await setDoc(doc(db, "online_status", userEmail), {
-                    name: userName, avatar: currentAvatar, last_seen: new Date().getTime()
-                });
-            };
-            updateHeartbeat();
-            setInterval(updateHeartbeat, 30000);
-
-            const q = query(collection(db, "online_status"));
-            onSnapshot(q, (snapshot) => {
-                const listContainer = document.getElementById('user-list-container');
-                const badge = document.getElementById('active-user-count');
-                const now = new Date().getTime();
-                const timeout = 2 * 60 * 1000;
-                let activeUsers = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (now - data.last_seen < timeout) activeUsers.push(data);
-                });
-                activeUsers.sort((a,b) => a.name.localeCompare(b.name));
-                badge.innerText = activeUsers.length;
-                if(activeUsers.length === 0) { listContainer.innerHTML = '<div style="color:#666; padding:10px;">Keine aktiven Signale.</div>'; return; }
-                let html = "";
-                activeUsers.forEach(u => {
-                    const isMe = (u.name === userName);
-                    const style = isMe ? "border-color:#00ff00; background: #002200;" : "";
-                    html += `<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold; color:white;">${u.name} ${isMe ? '(Du)' : ''}</div><div style="font-size:0.7rem; color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
-                });
-                listContainer.innerHTML = html;
-            });
-        }
-
-        // --- AUTH ---
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, user => {
             if (user) {
+                currentUser = user;
                 playerName = user.email.replace("@mba-arcade.com", "");
-                document.getElementById('lobby-status').innerText = "Hallo " + playerName;
-                initLobbyList();
-                startPresenceSystem(user.email, playerName); // Start Sidebar
+                loadLobbies();
             } else {
                 window.location.href = "index.html";
             }
         });
 
-        // --- LOBBY LIST ---
-        function initLobbyList() {
+        // --- LOBBY LOGIC ---
+        function loadLobbies() {
+            // WICHTIG: Hier prüfen wir auf "status", da das im Code nun einheitlich ist
             const q = query(collection(db, "lobbies"), where("status", "==", "waiting"));
             onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('lobbies-container');
-                container.innerHTML = "";
-                // Fix: Text wird durch CSS #lobbies-container zentriert
-                if(snapshot.empty) { container.innerHTML = "<p style='color:#888;'>Keine offenen Lobbys.</p>"; return; }
+                const list = document.getElementById('lobby-list');
+                list.innerHTML = "";
+                if(snapshot.empty) list.innerHTML = "<p style='color:#888'>Keine offenen Lobbys.</p>";
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const btn = document.createElement('button');
-                    btn.innerText = `Lobby von ${data.host} beitreten`;
-                    btn.style.width = "100%";
-                    btn.style.marginBottom = "10px";
-                    btn.onclick = () => joinLobby(doc.id);
-                    container.appendChild(btn);
+                    list.innerHTML += `
+                        <div class="lobby-card">
+                            <div><strong>Host: ${data.hostName}</strong><br><small>Spieler: ${data.players ? data.players.length : 0}</small></div>
+                            <button class="btn" style="width: auto;" onclick="joinLobby('${doc.id}')">BEITRETEN</button>
+                        </div>
+                    `;
                 });
             });
         }
 
         window.createNewLobby = async function() {
+            const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
             const lobbyData = {
-                host: playerName,
-                status: "waiting",
-                players: [], 
-                gameState: null,
-                createdAt: new Date()
+                hostId: currentUser.uid,
+                hostName: playerName,
+                status: "waiting", // Einheitlich: "status"
+                createdAt: new Date(),
+                // Initial player list
+                players: [{ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false }],
+                gameState: null
             };
             const docRef = await addDoc(collection(db, "lobbies"), lobbyData);
             joinLobby(docRef.id);
         }
 
-        async function joinLobby(lobbyId) {
+        window.joinLobby = async function(lobbyId) {
             currentLobbyId = lobbyId;
-            switchView('view-betting');
-            
-            // Subscribe to Lobby Updates
-            onSnapshot(doc(db, "lobbies", currentLobbyId), (doc) => {
-                if(!doc.exists()) return;
-                const data = doc.data();
-                
-                // Check Host
-                isHost = (data.host === playerName);
-                if(isHost) document.getElementById('host-controls').style.display = 'block';
+            document.getElementById('view-start').classList.remove('active');
+            document.getElementById('view-lobby').classList.add('active');
 
-                // Player List update
-                const pList = document.getElementById('player-list-display');
-                if(data.players) {
-                    pList.innerHTML = "<h4>Spieler:</h4>" + data.players.map(p => `<div>${p.name} (Wettet auf ${p.betSuit})</div>`).join("");
-                }
-
-                // Game Started?
-                if(data.status === "racing" && document.getElementById('view-race').style.display === "none") {
-                    startRaceView(data);
-                }
-                
-                // Update Race State
-                if(data.status === "racing") {
-                    updateRaceVisuals(data.gameState);
-                }
-
-                // Finished?
-                if(data.status === "finished") {
-                    showResults(data);
-                }
+            onSnapshot(doc(db, "lobbies", lobbyId), (docSnap) => {
+                if(!docSnap.exists()) { alert("Lobby wurde aufgelöst."); window.location.reload(); return; }
+                const data = docSnap.data();
+                renderLobbyRoom(data);
             });
         }
 
-        // --- BETTING ---
-        window.selectBet = function(suit) {
-            myBet = suit;
+        window.deleteLobby = async function() {
+            if(confirm("Möchtest du diese Lobby wirklich löschen?")) {
+                await deleteDoc(doc(db, "lobbies", currentLobbyId));
+            }
+        }
+
+        function renderLobbyRoom(data) {
+            // Check if I am in the player list, if not add me
+            const me = data.players.find(p => p.name === playerName); // Identify by Name for safety
+            if(!me) {
+                const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
+                // Add myself using arrayUnion to avoid overwriting others
+                updateDoc(doc(db, "lobbies", currentLobbyId), {
+                    players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false })
+                });
+                return; // Wait for next update
+            }
+
+            isHost = (data.hostId === currentUser.uid);
+            
+            const list = document.getElementById('lobby-players');
+            list.innerHTML = "";
+            let readyCount = 0;
+
+            data.players.forEach(p => {
+                if(p.ready) readyCount++;
+                const status = p.ready ? `<span style="color:#00ff00">Bereit (${p.betAmount}💰 auf ${p.betSuit})</span>` : `<span style="color:#888">Wettet...</span>`;
+                list.innerHTML += `
+                    <div class="player-chip">
+                        <img src="${p.avatar}" class="player-avatar">
+                        <strong>${p.name}</strong>
+                        <small>${status}</small>
+                    </div>
+                `;
+            });
+
+            document.getElementById('player-count').innerText = data.players.length;
+
+            // Host Controls
+            if(isHost) {
+                document.getElementById('host-controls').style.display = 'block';
+                const startBtn = document.getElementById('btn-start-game');
+                const msg = document.getElementById('host-status-msg');
+                // Allow start only if everyone is ready
+                const allReady = (data.players.length > 0 && readyCount === data.players.length);
+                
+                startBtn.disabled = !allReady;
+                msg.innerText = allReady ? "Alle bereit!" : `Warte: ${readyCount}/${data.players.length} bereit...`;
+                msg.style.color = allReady ? "#00ff00" : "#aaa";
+            }
+
+            // Hide betting if I am ready
+            if(me.ready) document.getElementById('betting-controls').style.display = 'none';
+
+            // Game State Transitions
+            if(data.status === 'racing') startGameClient(data);
+            if(data.status === 'finished') showResults(data);
+        }
+
+        // --- BETTING LOGIC ---
+        window.selectBet = function(suit, element) {
+            myBetSuit = suit;
+            // Visual feedback
             document.querySelectorAll('.bet-option').forEach(el => el.classList.remove('selected'));
-            event.target.classList.add('selected');
-            document.getElementById('btn-place-bet').style.display = 'inline-block';
+            element.classList.add('selected');
         }
 
-        window.placeBet = async function() {
-            if(!myBet) return;
-            // Add player to lobby
+        window.lockInBet = async function() {
+            const amount = parseInt(document.getElementById('bet-amount').value);
+            if(!myBetSuit || amount <= 0) { alert("Bitte Wette wählen!"); return; }
+
+            // Safe update: Read current data, modify my entry, write back
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
-            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId))); // Quick read to get current array
-            
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = snap.docs[0].data();
-            const newPlayers = data.players || [];
-            // Remove if already exists
-            const filtered = newPlayers.filter(p => p.name !== playerName);
-            filtered.push({ name: playerName, betSuit: myBet, payout: 0 });
             
-            await updateDoc(lobbyRef, { players: filtered });
-            switchView('view-waiting');
+            // Rebuild player list with my new status
+            const newPlayers = data.players.map(p => {
+                if(p.name === playerName) return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
+                return p;
+            });
+            await updateDoc(lobbyRef, { players: newPlayers });
         }
 
-        // --- HOST LOGIC ---
+        // --- GAME LOGIC ---
         window.hostStartGame = async function() {
-            // Deck Setup
             const deck = createDeck();
+            const penaltyCards = deck.splice(0, 7); 
+            const positions = { '♦': 0, '♥': 0, '♠': 0, '♣': 0 };
+            
             const gameState = {
-                deck: deck,
-                positions: { '♦': 0, '♥': 0, '♠': 0, '♣': 0 },
-                penaltyCards: [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()],
+                deck: deck, 
+                penaltyCards: penaltyCards,
                 penaltyRevealed: [false, false, false, false, false, false, false],
-                finishedOrder: [],
+                positions: positions,
+                finishedOrder: [], 
                 lastDrawnCard: null
             };
 
             await updateDoc(doc(db, "lobbies", currentLobbyId), {
-                status: "racing",
+                status: 'racing', // Set status to racing
                 gameState: gameState
             });
         }
@@ -382,17 +393,17 @@
             const data = snap.docs[0].data();
             const gs = data.gameState;
 
-            if(gs.deck.length === 0) gs.deck = createDeck(); // Safety refill
+            if(gs.deck.length === 0) gs.deck = createDeck();
 
             const card = gs.deck.pop();
             gs.lastDrawnCard = card;
 
-            // Move
+            // Movement Logic
             if(!gs.finishedOrder.includes(card.suit)) {
                 gs.positions[card.suit]++;
             }
 
-            // Finish check
+            // Finish check (Goal is 8 steps)
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
                 gs.positions[card.suit] = 8; 
@@ -400,7 +411,6 @@
 
             // Penalty Logic
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
-            
             for(let i=0; i<7; i++) {
                 if(minPos >= (i+1) && !gs.penaltyRevealed[i]) {
                     gs.penaltyRevealed[i] = true;
@@ -411,7 +421,7 @@
                 }
             }
 
-            // GAME END CHECK (3 Pferde im Ziel = Ende)
+            // Game Over Check (When 3 finished, we know the 4th is last)
             if(gs.finishedOrder.length === 3) {
                 const allSuits = ['♦', '♥', '♠', '♣'];
                 const loser = allSuits.find(s => !gs.finishedOrder.includes(s));
@@ -423,129 +433,82 @@
             await updateDoc(doc(db, "lobbies", currentLobbyId), { gameState: gs });
         }
 
-        async function calculateResults(players, order) {
-            const updatedPlayers = players.map(p => {
-                let payout = 0;
-                let text = "";
-                if(p.betSuit === order[0]) { payout = 2; text = "SIEG! (Verteilen: 2x)"; }
-                else if(p.betSuit === order[1]) { payout = 1; text = "Platz 2 (Verteilen: 1x)"; }
-                else if(p.betSuit === order[2]) { payout = -1; text = "Platz 3 (Trinken: 1x)"; }
-                else { payout = -2; text = "LETZTER! (Trinken: 2x)"; }
-                return { ...p, payout: payout, resultText: text };
-            });
+        function startGameClient(data) {
+            document.getElementById('view-lobby').classList.remove('active');
+            document.getElementById('view-race').classList.add('active');
 
-            await updateDoc(doc(db, "lobbies", currentLobbyId), {
-                players: updatedPlayers,
-                status: "finished",
-                "gameState.finishedOrder": order // Save final order
-            });
-        }
-
-
-        // --- VISUALS ---
-        function startRaceView(data) {
-            switchView('view-race');
-            if(isHost) document.getElementById('host-draw-controls').style.display = 'block';
-            renderTrack();
-        }
-
-        function renderTrack() {
-            const container = document.getElementById('track');
-            container.innerHTML = "";
-            const suits = ['♦', '♥', '♠', '♣'];
-            
-            // Finish line marker
-            const line = document.createElement('div');
-            line.className = 'finish-line';
-            line.style.left = (8 * 11 + 20) + '%'; 
-
-            suits.forEach(suit => {
-                const lane = document.createElement('div');
-                lane.className = 'track-lane';
-                lane.id = `lane-${suit}`;
-                
-                const horse = document.createElement('div');
-                horse.className = 'horse-marker';
-                horse.innerText = suit === '♦' || suit === '♥' ? suit + '🟥' : suit + '⬛'; 
-                horse.style.color = suit === '♦' || suit === '♥' ? '#ff4444' : '#fff';
-                horse.id = `horse-${suit}`;
-                horse.style.left = '0%';
-                
-                lane.appendChild(horse);
-                container.appendChild(lane);
-            });
-            
-            for(let i=0; i<7; i++) {
-                const marker = document.createElement('div');
-                marker.className = 'penalty-card';
-                marker.id = `penalty-${i}`;
-                marker.innerText = "?";
-                marker.style.left = ((i+1) * 11) + '%'; 
-                marker.style.top = '250px'; // Below lanes
-                container.appendChild(marker);
+            if(isHost) {
+                document.getElementById('host-game-controls').style.display = 'block';
+                document.getElementById('client-wait-msg').style.display = 'none';
             }
+            renderGrid(data.gameState);
+            renderLastCard(data.gameState.lastDrawnCard);
         }
 
-        function updateRaceVisuals(gs) {
+        function renderGrid(gs) {
+            const container = document.getElementById('grid-target');
+            container.innerHTML = "";
+            
+            // Penalty Row
+            container.innerHTML += `<div class="cell"></div>`;
+            for(let i=0; i<7; i++) {
+                let content = `<div class="card card-back"></div>`;
+                if(gs.penaltyRevealed[i]) {
+                    const c = gs.penaltyCards[i];
+                    const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
+                    content = `<div class="card ${color}">${c.suit}${c.value}</div>`;
+                }
+                container.innerHTML += `<div class="cell cell-penalty">${content}</div>`;
+            }
+            container.innerHTML += `<div class="cell"></div>`;
+
+            // Horse Rows
             const suits = ['♦', '♥', '♠', '♣'];
             suits.forEach(suit => {
                 const pos = gs.positions[suit];
-                const el = document.getElementById(`horse-${suit}`);
-                if(el) el.style.left = (pos * 11) + '%';
-            });
-
-            for(let i=0; i<7; i++) {
-                const el = document.getElementById(`penalty-${i}`);
-                if(el) {
-                    if(gs.penaltyRevealed[i]) {
-                        const card = gs.penaltyCards[i];
-                        el.className = 'penalty-card revealed';
-                        el.innerText = card.value + card.suit;
-                        el.style.color = (card.suit === '♦' || card.suit === '♥') ? 'red' : 'black';
-                    }
+                const color = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
+                for(let i=0; i<=8; i++) {
+                    let cls = i===8 ? "cell cell-goal" : "cell";
+                    // Render horse as a card ace
+                    let content = (pos === i) ? `<div class="card ${color}" style="transform:scale(0.9); border: 2px solid gold;">${suit}</div>` : "";
+                    container.innerHTML += `<div class="${cls}">${content}</div>`;
                 }
-            }
-            
-            if(gs.lastDrawnCard) {
-                const lc = gs.lastDrawnCard;
-                const disp = document.getElementById('last-card-display');
-                disp.innerText = lc.value + lc.suit;
-                disp.style.color = (lc.suit === '♦' || lc.suit === '♥') ? '#ff4444' : '#fff';
-            }
+            });
+        }
+
+        function renderLastCard(card) {
+            const div = document.getElementById('drawn-card-display');
+            if(!card) { div.innerHTML = ""; return; }
+            const color = (card.suit === '♥' || card.suit === '♦') ? 'suit-red' : 'suit-black';
+            div.innerHTML = `<div class="card last-card-anim ${color}">${card.suit}${card.value}</div><div style="font-weight:bold; margin-top:5px;">${card.suit} zieht!</div>`;
+        }
+
+        async function calculateResults(players, finishedOrder) {
+            const updatedPlayers = players.map(p => {
+                const rank = finishedOrder.indexOf(p.betSuit); 
+                let profit = 0, txt = "";
+                
+                if(rank === 0) { profit = p.betAmount * 2; txt = "SUPER (x2)"; }
+                else if(rank === 1) { profit = p.betAmount * 1; txt = "GUT (x1)"; }
+                else if(rank === 2) { profit = p.betAmount * -1; txt = "VERLOREN (-1x)"; }
+                else if(rank === 3) { profit = p.betAmount * -2; txt = "STRAFE (-2x)"; }
+                
+                return { ...p, payout: profit, resultText: txt };
+            });
+            await updateDoc(doc(db, "lobbies", currentLobbyId), { players: updatedPlayers, status: 'finished' });
         }
 
         function showResults(data) {
             document.getElementById('view-race').classList.remove('active');
             document.getElementById('view-result').classList.add('active');
             const list = document.getElementById('result-list');
+            const o = data.gameState.finishedOrder;
             
-            let order = data.gameState.finishedOrder || [];
-            const allSuits = ['♦', '♥', '♠', '♣'];
-            const missing = allSuits.filter(suit => !order.includes(suit));
-            const finalOrder = [...order, ...missing];
-
             let html = `<div style="margin-bottom:20px; padding:10px; border:1px solid #444; border-radius:5px;">
-                <h3>Zieleinlauf</h3>
+                <h3>Einlauf</h3>
                 <div style="display:flex; justify-content:space-around; font-size:1.5rem;">
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        <span style="font-size:0.8rem; color:#ffd700;">1. Platz</span>
-                        <span>🥇 ${finalOrder[0]}</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        <span style="font-size:0.8rem; color:#c0c0c0;">2. Platz</span>
-                        <span>🥈 ${finalOrder[1]}</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        <span style="font-size:0.8rem; color:#cd7f32;">3. Platz</span>
-                        <span>🥉 ${finalOrder[2]}</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        <span style="font-size:0.8rem; color:#ff4444;">Vierter</span>
-                        <span>💀 ${finalOrder[3]}</span>
-                    </div>
-                </div>
-            </div>
-            <h3>Bilanz</h3>`;
+                    <span>🥇${o[0]}</span><span>🥈${o[1]}</span><span>🥉${o[2]}</span><span>💀${o[3]}</span>
+                </div></div><h3>Bilanz</h3>`;
             
             data.players.forEach(p => {
                 let col = p.payout > 0 ? "#00ff00" : (p.payout < 0 ? "#ff0000" : "#fff");
@@ -557,35 +520,26 @@
             list.innerHTML = html;
         }
 
-        window.backToLobby = function() {
-            window.location.href = "lobby.html";
-        }
-
-        // --- UTILS ---
-        function switchView(id) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
         function createDeck() {
             const suits = ['♦', '♥', '♠', '♣'];
-            const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-            let deck = [];
-            for(let s of suits) {
-                for(let v of values) {
-                    deck.push({ suit: s, value: v });
-                }
-            }
-            return shuffle(deck);
-        }
-
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
+            const values = ['7', '8', '9', '10', 'B', 'D', 'K', 'A']; 
+            let d = [];
+            for (let s of suits) for (let v of values) d.push({ suit: s, value: v });
+            for (let i = d.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+                [d[i], d[j]] = [d[j], d[i]];
             }
-            return array;
+            return d;
         }
+        
+        // Expose functions to window
+        window.joinLobby = joinLobby;
+        window.createNewLobby = createNewLobby;
+        window.selectBet = selectBet;
+        window.lockInBet = lockInBet;
+        window.hostStartGame = hostStartGame;
+        window.hostDrawCard = hostDrawCard;
+        window.deleteLobby = deleteLobby;
     </script>
 </body>
 </html>
