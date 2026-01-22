@@ -18,33 +18,44 @@
             margin: 0; 
             padding: 20px;
             box-sizing: border-box; 
-            overflow-x: hidden; /* Wichtig für Sidebar Animation */
+            overflow-x: hidden; 
         }
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
         
-        /* --- STATUS ANZEIGE --- */
+        /* --- STATUS ANZEIGE (JETZT LINKS) --- */
         #status-display {
-            position: absolute; top: 15px; right: 15px;
+            position: absolute; 
+            top: 15px; 
+            left: 15px; /* HIER GEÄNDERT: Von rechts nach links */
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
             z-index: 900; border: 1px solid #333; transition: all 0.3s;
         }
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- ACTIVE USER SIDEBAR (NEU) --- */
+        /* --- ACTIVE USER SIDEBAR (GEFIXT) --- */
         #user-sidebar {
-            position: fixed; top: 0; right: -260px; /* Versteckt */
-            width: 250px; height: 100vh;
+            position: fixed; 
+            top: 0; 
+            right: -300px; /* HIER GEÄNDERT: Weiter rausgeschoben (-300px statt -260px) */
+            width: 250px; 
+            height: 100vh;
             background: rgba(0, 0, 0, 0.95);
             border-left: 2px solid #00ff00;
             z-index: 2000;
             transition: right 0.3s ease-in-out;
             padding: 20px;
-            box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2);
             overflow-y: auto;
+            /* Schatten im geschlossenen Zustand entfernt, damit kein grüner Streifen zu sehen ist */
+            box-shadow: none; 
         }
-        #user-sidebar.open { right: 0; }
+        
+        #user-sidebar.open { 
+            right: 0; 
+            /* Schatten erst aktivieren, wenn offen */
+            box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2);
+        }
 
         .sidebar-header {
             font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00;
@@ -65,7 +76,7 @@
             box-shadow: 0 0 5px #00ff00;
         }
 
-        /* FLOATING BUTTON (unten rechts) */
+        /* FLOATING BUTTON */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
