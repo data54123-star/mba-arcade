@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MBA Busfahrer</title>
+    <style>
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 60px 0 20px 0; font-size: 2rem; text-align: center;}
+        .highlight { color: #ffff00; font-weight: bold; }
+        
+        /* UI ELEMENTS */
+        .btn-home {
+            position: absolute; top: 15px; left: 15px; 
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000; text-decoration: none; font-size: 1rem;
+        }
+        #status-display {
+            position: absolute; top: 15px; right: 15px;
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+        }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
+
+        /* SIDEBAR */
+        #user-sidebar {
+            position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
+            background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
+            z-index: 2000; transition: right 0.3s ease-in-out, border-color 0.3s; padding: 20px; box-shadow: none; overflow-y: auto;
+        }
+        #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
+        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .close-btn { cursor: pointer; font-size: 1.5rem; }
+        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
+        .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
+        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
+        #toggle-users-btn {
+            position: fixed; bottom: 20px; right: 20px; background: #000; color: #00ff00; border: 2px solid #00ff00; padding: 15px; border-radius: 50%; width: 60px; height: 60px;
+            font-size: 1.5rem; cursor: pointer; z-index: 1900; display: flex; justify-content: center; align-items: center;
+        }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
+
+        /* BUTTONS */
+        .btn { background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px; transition: all 0.2s; }
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
+        .btn-danger { border-color: #ff4444; color: #ff4444; margin-top: 10px; }
+        .btn-danger:hover { background: #ff4444; color: #fff; }
+
+        /* GAME CONTAINERS */
+        .view { display: none; width: 95%; max-width: 1000px; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
+        .view.active { display: flex; }
+        .lobby-card { background: #111; border: 1px solid #444; padding: 15px; margin: 10px auto; width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; }
+        .player-list { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin: 20px 0; }
+        .player-chip { background: #222; border: 1px solid #444; padding: 10px; text-align: center; border-radius: 5px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
+        
+        /* CARDS */
+        .card { width: 60px; height: 90px; background: white; border-radius: 5px; color: black; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); user-select: none; position: relative; border: 2px solid white;}
+        .card-back { background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 5px, #d32f2f 5px, #d32f2f 10px); border: 2px solid #fff; color: transparent; }
+        .suit-red { color: #d32f2f; } .suit-black { color: #000; }
+        
+        /* PYRAMID */
+        .pyramid-container { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; margin-top: 20px; width: 100%; overflow-x: auto; }
+        .pyramid-row { display: flex; gap: 10px; justify-content: center; }
+        
+        /* SELECTION GRIDS */
+        .selection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 400px; }
+        .selection-btn { border: 2px solid #555; background: #222; padding: 15px; cursor: pointer; text-align: center; font-size: 1.2rem; }
+        .selection-btn:hover { background: #333; }
+        .selection-btn.selected { border-color: #00ff00; background: #002200; }
+        .card-grid-select { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+        .card-select-item { width: 30px; height: 45px; font-size: 0.8rem; cursor: pointer; border: 1px solid #ccc; background: white; color: black; display: flex; justify-content: center; align-items: center;}
+        
+        /* MY HAND */
+        #my-hand { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px; display: flex; justify-content: center; gap: 5px; z-index: 100; border-top: 1px solid #333; }
+        .hand-card { transform: scale(0.8); cursor: pointer; transition: transform 0.2s; }
+        .hand-card:hover { transform: scale(1.0) translateY(-10px); }
+        .hand-card.used { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+
+        /* SCOREBOARD */
+        #scoreboard { position: fixed; top: 60px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #444; border-radius: 5px; font-size: 0.8rem; display: none; }
+        @media (max-width: 800px) { #scoreboard { position: static; width: 100%; margin-bottom: 20px; display: block; } }
+
+        /* MODAL */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: #222; border: 2px solid #00ff00; padding: 20px; text-align: center; max-width: 90%; }
+
+    </style>
+</head>
+<body>
+
+    <button onclick="window.location.href='lobby.html'" class="btn-home">🏠 HOME</button>
+    <div id="status-display" class="status-online">ONLINE 🟢</div>
+
+    <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
+    <div id="user-sidebar">
+        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
+        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <h3>PUNKTE VERGEBEN!</h3>
+            <p id="modal-msg">Wähle einen Spieler:</p>
+            <div id="modal-player-list" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
+            <button class="btn btn-danger" onclick="closeModal()">Abbrechen</button>
+        </div>
+    </div>
+
+    <div id="scoreboard">
+        <strong>PUNKTE (SCHLUCKE)</strong>
+        <div id="score-list"></div>
+    </div>
+
+    <div id="view-start" class="view active">
+        <h1>🚌 BUSFAHRER</h1>
+        <p>Das legendäre Trinkspiel.</p>
+        <div style="width: 100%; max-width: 800px; margin: 20px 0;">
+            <h3>Offene Busse</h3>
+            <div id="lobby-list">Lade...</div>
+        </div>
+        <button class="btn" onclick="createNewLobby()">NEUEN BUS STARTEN</button>
+    </div>
+
+    <div id="view-lobby" class="view">
+        <h2 id="lobby-title">Bus-Haltestelle</h2>
+        <p>Warte auf Mitfahrer...</p>
+        <div class="player-list" id="lobby-players"></div>
+        <div id="host-controls" style="display: none; width: 100%; text-align: center;">
+            <p class="highlight">👑 DU BIST DER BUSFAHRER (HOST)</p>
+            <button class="btn" onclick="hostStartGame()">SPIEL STARTEN</button>
+            <button class="btn btn-danger" onclick="deleteLobby()">FAHRT ABSAGEN</button>
+        </div>
+    </div>
+
+    <div id="view-game" class="view">
+        <div id="game-instruction" style="margin-bottom: 20px; font-size: 1.2rem; color: #00ff00; text-align: center; min-height: 50px;"></div>
+        
+        <div id="interaction-area" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+
+        <div id="pyramid-area" class="pyramid-container" style="display: none;"></div>
+
+        <div id="host-game-controls" style="margin-top: 20px; display: none;">
+            <button class="btn" onclick="hostNextAction()" id="btn-host-action">WEITER</button>
+        </div>
+    </div>
+
+    <div id="my-hand" style="display: none;"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let playerName = "Gast";
+        let currentLobbyId = null;
+        let isHost = false;
+        let mySelection = null; // Für die Phasen 1-4
+        let pyramidPointsToGive = 0; // Für Phase 5
+        let currentCardToMatch = null; // Für Phase 5
+
+        // --- PRESENCE & UI ---
+        function updateOnlineStatus() {
+            const el = document.getElementById('status-display');
+            if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; }
+            else{ el.innerText="OFFLINE 🔴"; el.className="status-offline"; }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+        window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
+
+        function startPresenceSystem(userEmail, userName) {
+            const beat = async () => { await setDoc(doc(db, "online_status", userEmail), { name: userName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", last_seen: new Date().getTime() }); };
+            beat(); setInterval(beat, 30000);
+            onSnapshot(query(collection(db, "online_status")), (s) => {
+                const l = document.getElementById('user-list-container'); const b = document.getElementById('active-user-count'); const n = new Date().getTime(); let a = [];
+                s.forEach(d => { if(n - d.data().last_seen < 120000) a.push(d.data()); }); a.sort((x,y)=>x.name.localeCompare(y.name)); b.innerText = a.length;
+                if(a.length===0){ l.innerHTML='<div style="color:#666;padding:10px;">Keine Signale.</div>'; return;}
+                let h = ""; a.forEach(u => { const st = (u.name===userName) ? "border-color:#00ff00; background:#002200;" : ""; h+=`<div class="user-list-item" style="${st}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div style="font-size:0.7rem;color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`; }); l.innerHTML = h;
+            });
+        }
+
+        onAuthStateChanged(auth, u => {
+            if(u) {
+                currentUser = u; playerName = u.email.replace("@mba-arcade.com", "");
+                startPresenceSystem(u.email, playerName); loadLobbies();
+            } else { window.location.href = "index.html"; }
+        });
+
+        // --- LOBBY SYSTEM ---
+        function loadLobbies() {
+            const q = query(collection(db, "lobbies"), where("status", "==", "waiting"), where("gameType", "==", "busfahrer"));
+            onSnapshot(q, (snap) => {
+                const l = document.getElementById('lobby-list'); l.innerHTML = "";
+                if(snap.empty) l.innerHTML = "<p style='color:#888'>Keine Busse in Sicht.</p>";
+                snap.forEach(d => {
+                    const data = d.data();
+                    l.innerHTML += `<div class="lobby-card"><div><strong>Fahrer: ${data.hostName}</strong><br><small>Passagiere: ${data.players.length}</small></div><button class="btn" style="width:auto;" onclick="joinLobby('${d.id}')">EINSTEIGEN</button></div>`;
+                });
+            });
+        }
+
+        window.createNewLobby = async function() {
+            const data = {
+                hostId: currentUser.uid, hostName: playerName, status: "waiting", gameType: "busfahrer",
+                players: [{ uid: currentUser.uid, name: playerName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", hand: [], score: 0, currentGuess: null }],
+                gameState: { phase: 0, deck: [], pyramid: [], pyramidState: [], currentPyramidIndex: -1 }
+            };
+            const ref = await addDoc(collection(db, "lobbies"), data);
+            joinLobby(ref.id);
+        }
+
+        window.joinLobby = function(id) {
+            currentLobbyId = id;
+            document.getElementById('view-start').classList.remove('active');
+            document.getElementById('view-lobby').classList.add('active');
+            onSnapshot(doc(db, "lobbies", id), (s) => {
+                if(!s.exists()) { alert("Bus ist abgefahren."); location.reload(); return; }
+                const d = s.data(); renderLobby(d);
+            });
+        }
+
+        window.deleteLobby = async function() { if(confirm("Busfahrt absagen?")) await deleteDoc(doc(db, "lobbies", currentLobbyId)); }
+
+        function renderLobby(data) {
+            const me = data.players.find(p => p.uid === currentUser.uid);
+            if(!me) {
+                updateDoc(doc(db, "lobbies", currentLobbyId), {
+                    players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", hand: [], score: 0, currentGuess: null })
+                }); return;
+            }
+            isHost = (data.hostId === currentUser.uid);
+            const l = document.getElementById('lobby-players'); l.innerHTML = "";
+            data.players.forEach(p => {
+                l.innerHTML += `<div class="player-chip"><img src="${p.avatar}" class="player-avatar"><strong>${p.name}</strong></div>`;
+            });
+            if(isHost) document.getElementById('host-controls').style.display = "block";
+            
+            if(data.status !== "waiting") {
+                document.getElementById('view-lobby').classList.remove('active');
+                document.getElementById('view-game').classList.add('active');
+                renderGame(data);
+            }
+        }
+
+        // --- GAME LOGIC ---
+        
+        function renderGame(data) {
+            const phase = data.gameState.phase;
+            const me = data.players.find(p => p.uid === currentUser.uid);
+            
+            // Scoreboard Update
+            const sl = document.getElementById('score-list'); sl.innerHTML = "";
+            document.getElementById('scoreboard').style.display = "block";
+            data.players.forEach(p => sl.innerHTML += `<div>${p.name}: <span style="color:${p.score>0?'red':'#00ff00'}">${p.score}</span></div>`);
+
+            // My Hand Update
+            const handDiv = document.getElementById('my-hand');
+            handDiv.innerHTML = "";
+            handDiv.style.display = "flex";
+            me.hand.forEach((c, idx) => {
+                const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
+                const usedClass = c.used ? 'used' : '';
+                const onclick = (phase === 5 && !c.used) ? `onclick="playCard('${c.suit}','${c.value}', ${idx})"` : '';
+                handDiv.innerHTML += `<div class="card hand-card ${color} ${usedClass}" ${onclick}>${c.suit}${c.value}</div>`;
+            });
+
+            // Host Controls
+            const hostBtn = document.getElementById('host-game-controls');
+            if(isHost) {
+                hostBtn.style.display = "block";
+                const btn = document.getElementById('btn-host-action');
+                if(phase < 5) btn.innerText = "KARTEN AUFDECKEN / NÄCHSTE RUNDE";
+                else btn.innerText = "NÄCHSTE PYRAMIDEN-KARTE";
+            }
+
+            // Phase Logic
+            const instr = document.getElementById('game-instruction');
+            const area = document.getElementById('interaction-area');
+            const pyrArea = document.getElementById('pyramid-area');
+
+            if(phase === 1) { // Rot oder Schwarz
+                instr.innerText = "RUNDE 1: Rot oder Schwarz?";
+                pyrArea.style.display = "none";
+                if(!me.currentGuess) {
+                    area.innerHTML = `<div class="selection-grid">
+                        <div class="selection-btn" onclick="submitGuess('color', 'red')">ROT <span style="color:red">♥♦</span></div>
+                        <div class="selection-btn" onclick="submitGuess('color', 'black')">SCHWARZ <span style="color:white">♠♣</span></div>
+                    </div>`;
+                } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
+            } 
+            else if(phase === 2) { // Suit
+                instr.innerText = "RUNDE 2: Welches Symbol?";
+                if(!me.currentGuess) {
+                    area.innerHTML = `<div class="selection-grid">
+                        <div class="selection-btn" onclick="submitGuess('suit', '♦')"><span style="color:red">♦ Karo</span></div>
+                        <div class="selection-btn" onclick="submitGuess('suit', '♥')"><span style="color:red">♥ Herz</span></div>
+                        <div class="selection-btn" onclick="submitGuess('suit', '♠')">♠ Pik</div>
+                        <div class="selection-btn" onclick="submitGuess('suit', '♣')">♣ Kreuz</div>
+                    </div>`;
+                } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
+            }
+            else if(phase === 3) { // Rank
+                instr.innerText = "RUNDE 3: Welcher Wert?";
+                if(!me.currentGuess) {
+                    const ranks = ['7','8','9','10','B','D','K','A'];
+                    let html = `<div class="card-grid-select">`;
+                    ranks.forEach(r => html += `<div class="card-select-item" onclick="submitGuess('rank', '${r}')">${r}</div>`);
+                    area.innerHTML = html + `</div>`;
+                } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
+            }
+            else if(phase === 4) { // Exact
+                instr.innerText = "RUNDE 4: Genaue Karte (Viel Glück!)";
+                if(!me.currentGuess) {
+                    const ranks = ['7','8','9','10','B','D','K','A'];
+                    const suits = ['♦','♥','♠','♣'];
+                    let html = `<div class="card-grid-select" style="grid-template-columns: repeat(8, 1fr);">`;
+                    suits.forEach(s => {
+                        const col = (s === '♥' || s === '♦') ? 'red' : 'black';
+                        ranks.forEach(r => {
+                            html += `<div class="card-select-item" style="color:${col}" onclick="submitGuess('exact', '${s}${r}')">${s}${r}</div>`;
+                        });
+                    });
+                    area.innerHTML = html + `</div>`;
+                } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
+            }
+            else if(phase === 5) { // Pyramid
+                instr.innerText = "FINALE: DIE PYRAMIDE";
+                area.innerHTML = "";
+                pyrArea.style.display = "flex";
+                renderPyramidBoard(data.gameState);
+                
+                // Active Card Logic
+                if(data.gameState.currentPyramidIndex >= 0) {
+                    const activeCard = data.gameState.pyramid[data.gameState.currentPyramidIndex];
+                    if(data.gameState.pyramidState[data.gameState.currentPyramidIndex]) {
+                        currentCardToMatch = activeCard;
+                        instr.innerText = `Karte: ${activeCard.suit}${activeCard.value} aufgedeckt! Hast du eine ${activeCard.value}?`;
+                    }
+                }
+            }
+        }
+
+        function renderPyramidBoard(gs) {
+            const container = document.getElementById('pyramid-area');
+            container.innerHTML = "";
+            
+            // Pyramid Structure: 5 rows (1, 2, 3, 4, 5 cards) - reversed visually
+            // Index Mapping is flat: 0 (top), 1-2 (row 4), 3-5 (row 3), etc.
+            // Let's adhere to user rule: Bottom row (5 cards) to Top (1 card).
+            // Flat array: 0-4 (Row 1), 5-8 (Row 2), 9-11 (Row 3), 12-13 (Row 4), 14 (Row 5)
+            
+            let idx = 0;
+            const rows = [5, 4, 3, 2, 1];
+            rows.forEach((count, rowIndex) => {
+                let rowHtml = `<div class="pyramid-row">`;
+                for(let i=0; i<count; i++) {
+                    const card = gs.pyramid[idx];
+                    const revealed = gs.pyramidState[idx];
+                    const active = (idx === gs.currentPyramidIndex);
+                    const border = active ? "border: 4px solid yellow;" : "";
+                    
+                    if(revealed) {
+                        const color = (card.suit === '♥' || card.suit === '♦') ? 'suit-red' : 'suit-black';
+                        rowHtml += `<div class="card ${color}" style="${border} transform: scale(0.8);">${card.suit}${card.value}</div>`;
+                    } else {
+                        rowHtml += `<div class="card card-back" style="${border} transform: scale(0.8);"></div>`;
+                    }
+                    idx++;
+                }
+                container.innerHTML += rowHtml + `</div>`;
+            });
+        }
+
+        // --- USER ACTIONS ---
+        window.submitGuess = async function(type, val) {
+            const lobbyRef = doc(db, "lobbies", currentLobbyId);
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = snap.docs[0].data();
+            
+            const newPlayers = data.players.map(p => {
+                if(p.uid === currentUser.uid) return { ...p, currentGuess: val };
+                return p;
+            });
+            await updateDoc(lobbyRef, { players: newPlayers });
+        }
+
+        window.playCard = function(s, v, handIdx) {
+            if(!currentCardToMatch) return;
+            if(v !== currentCardToMatch.value) { alert("Wert passt nicht!"); return; }
+            
+            // Determine Points based on row
+            // Logic: 0-4 = 1pt, 5-8 = 3pt, 9-11 = 5pt, 12-13 = 7pt, 14 = 9pt
+            // Need current pyramid index from DB, but we have local copy or need to fetch
+            // Let's assume user is honest or verify later. For UI speed, open modal.
+            
+            // Find row of current card
+            // We need to know which index is active.
+            // Fetch fresh data or use closure? Better fetch to be safe.
+            getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId))).then(snap => {
+                const d = snap.docs[0].data();
+                const idx = d.gameState.currentPyramidIndex;
+                let points = 0;
+                if(idx < 5) points = 1;
+                else if(idx < 9) points = 3;
+                else if(idx < 12) points = 5;
+                else if(idx < 14) points = 7;
+                else points = 9;
+                
+                pyramidPointsToGive = points;
+                
+                // Show Modal
+                const list = document.getElementById('modal-player-list');
+                list.innerHTML = "";
+                d.players.forEach(p => {
+                    if(p.uid !== currentUser.uid) {
+                        list.innerHTML += `<button class="btn" style="width:auto" onclick="assignPoints('${p.uid}', ${points}, ${handIdx})">${p.name}</button>`;
+                    }
+                });
+                document.getElementById('modal-msg').innerText = `Verteile ${points} Schlucke an:`;
+                document.getElementById('modal-overlay').style.display = "flex";
+            });
+        }
+
+        window.assignPoints = async function(targetUid, points, handIdx) {
+            closeModal();
+            const lobbyRef = doc(db, "lobbies", currentLobbyId);
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = snap.docs[0].data();
+            
+            const newPlayers = data.players.map(p => {
+                if(p.uid === targetUid) return { ...p, score: p.score + points };
+                if(p.uid === currentUser.uid) {
+                    const newHand = [...p.hand];
+                    newHand[handIdx].used = true; // Mark as used
+                    return { ...p, hand: newHand };
+                }
+                return p;
+            });
+            await updateDoc(lobbyRef, { players: newPlayers });
+        }
+
+        window.closeModal = function() { document.getElementById('modal-overlay').style.display = "none"; }
+
+        // --- HOST LOGIC ---
+        window.hostStartGame = async function() {
+            // Generiere Deck und Pyramide
+            let fullDeck = createSkatDeck(); // 32 Karten
+            // Pyramide braucht 15 Karten
+            let pyramid = [];
+            for(let i=0; i<15; i++) {
+                const r = Math.floor(Math.random()*fullDeck.length);
+                pyramid.push(fullDeck[r]);
+                fullDeck.splice(r,1); // Remove from deck
+            }
+            
+            const gs = {
+                phase: 1, // Start Phase 1
+                deck: [], // Wird für jede Runde frisch generiert für "Unendlichkeit"
+                pyramid: pyramid,
+                pyramidState: new Array(15).fill(false),
+                currentPyramidIndex: -1
+            };
+            
+            await updateDoc(doc(db, "lobbies", currentLobbyId), { status: "ingame", gameState: gs });
+        }
+
+        window.hostNextAction = async function() {
+            const lobbyRef = doc(db, "lobbies", currentLobbyId);
+            const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
+            const data = snap.docs[0].data();
+            const phase = data.gameState.phase;
+
+            if(phase < 5) {
+                // DEAL CARDS & CHECK GUESSES
+                // Einfachheit: Wir verteilen jedem eine zufällige Karte und resetten Guess
+                // Echte Auswertung (Schwarz/Rot) wäre cool, aber "Zufallskarte zuteilen" reicht für den Flow
+                const newPlayers = data.players.map(p => {
+                    const deck = createSkatDeck();
+                    const card = deck[Math.floor(Math.random() * deck.length)];
+                    return { ...p, hand: [...p.hand, card], currentGuess: null };
+                });
+                
+                // Nächste Phase
+                const nextPhase = phase + 1;
+                await updateDoc(lobbyRef, { 
+                    players: newPlayers, 
+                    "gameState.phase": nextPhase 
+                });
+                
+                // Timeout Simulation für Spannung (optional, hier direkt)
+            } else {
+                // PYRAMID FLIP
+                let idx = data.gameState.currentPyramidIndex + 1;
+                if(idx >= 15) { alert("Spiel vorbei!"); return; }
+                
+                const newState = [...data.gameState.pyramidState];
+                newState[idx] = true;
+                
+                await updateDoc(lobbyRef, {
+                    "gameState.currentPyramidIndex": idx,
+                    "gameState.pyramidState": newState
+                });
+            }
+        }
+
+        function createSkatDeck() {
+            const s = ['♦', '♥', '♠', '♣'];
+            const v = ['7', '8', '9', '10', 'B', 'D', 'K', 'A']; 
+            let d = [];
+            for(let su of s) for(let va of v) d.push({ suit: su, value: va, used: false });
+            return d;
+        }
+
+        // EXPORTS
+        window.joinLobby = joinLobby;
+        window.createNewLobby = createNewLobby;
+        window.deleteLobby = deleteLobby;
+        window.hostStartGame = hostStartGame;
+        window.submitGuess = submitGuess;
+        window.hostNextAction = hostNextAction;
+        window.playCard = playCard;
+        window.assignPoints = assignPoints;
+        window.closeModal = closeModal;
+
+    </script>
+</body>
+</html>
