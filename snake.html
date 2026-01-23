@@ -19,14 +19,25 @@
             overflow-x: hidden;
         }
 
-        /* --- STATUS ANZEIGE (LINKS) --- */
-        #status-display {
+        /* --- NEUES DESIGN (WIE HORSERACE) --- */
+        
+        /* HOME BUTTON */
+        .btn-home {
             position: absolute; top: 15px; left: 15px; 
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
+            text-decoration: none; font-size: 1rem;
+        }
+
+        /* STATUS ANZEIGE (RECHTS) */
+        #status-display {
+            position: absolute; top: 15px; right: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
             z-index: 1000; border: 1px solid #333; transition: all 0.3s;
         }
-        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
-        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
+        .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
+        .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
         /* --- ACTIVE USER SIDEBAR --- */
         #user-sidebar {
@@ -73,7 +84,7 @@
 </head>
 <body>
 
-    <button onclick="window.location.href='lobby.html'" style="position: absolute; top: 15px; left: 160px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;">
+    <button onclick="window.location.href='lobby.html'" class="btn-home">
         🏠 HOME
     </button>
 
@@ -226,7 +237,7 @@
             if (!navigator.onLine) return;
             const tbody = document.getElementById('leaderboard-body');
             try {
-                // HIER GEÄNDERT: "scores_snake"
+                // Table: scores_snake
                 const q = query(collection(db, "scores_snake"), orderBy("score", "desc"), limit(10));
                 const querySnapshot = await getDocs(q);
                 tbody.innerHTML = "";
@@ -247,7 +258,6 @@
             gameIsRunning = false;
             if (!navigator.onLine) return;
             try {
-                // HIER GEÄNDERT: "scores_snake"
                 await addDoc(collection(db, "scores_snake"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
                 loadLeaderboard();
             } catch (e) { console.error("Save error", e); }

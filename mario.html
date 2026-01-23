@@ -5,54 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Super MBA Bros</title>
     <style>
-        body { background-color: #222; color: #fff; font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; touch-action: none; overflow: hidden; }
-        #status-display { position: absolute; top: 15px; left: 15px; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; z-index: 1000; border: 1px solid #333; transition: all 0.3s; }
+        body { 
+            background-color: #222; 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            touch-action: none; 
+            overflow: hidden;
+        }
+
+        /* --- NEUES DESIGN (WIE HORSERACE) --- */
+        
+        /* HOME BUTTON */
+        .btn-home {
+            position: absolute; top: 15px; left: 15px; 
+            background: #000; color: #00ff00; border: 1px solid #00ff00; 
+            padding: 8px 12px; border-radius: 5px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-weight: bold; z-index: 1000;
+            text-decoration: none; font-size: 1rem;
+        }
+
+        /* STATUS ANZEIGE (RECHTS) */
+        #status-display {
+            position: absolute; top: 15px; right: 15px;
+            padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
+            z-index: 1000; border: 1px solid #333; transition: all 0.3s;
+        }
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
-        #home-btn { position: absolute; top: 15px; left: 160px; background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 1000; }
-        #user-sidebar { position: fixed; top: 0; right: -320px; width: 250px; height: 100vh; background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; z-index: 2000; transition: right 0.3s ease-in-out, border-color 0.3s; padding: 20px; box-shadow: none; overflow-y: auto; }
+
+        /* SIDEBAR STYLES */
+        #user-sidebar {
+            position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
+            background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
+            z-index: 2000; transition: right 0.3s ease-in-out, border-color 0.3s;
+            padding: 20px; box-shadow: none; overflow-y: auto;
+        }
         #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
         .sidebar-header { color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
         .close-btn { cursor: pointer; font-size: 1.5rem; }
         .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
-        #toggle-users-btn { position: fixed; bottom: 20px; right: 20px; background: #000; color: #00ff00; border: 2px solid #00ff00; padding: 15px; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer; z-index: 1900; display: flex; justify-content: center; align-items: center; }
+        #toggle-users-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #000; color: #00ff00; border: 2px solid #00ff00;
+            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
+            font-size: 1.5rem; cursor: pointer; z-index: 1900;
+            display: flex; justify-content: center; align-items: center;
+        }
         .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
+
+        /* GAME STYLES */
         .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
-        canvas { border: 4px solid #fff; border-radius: 4px; background: #5c94fc; max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); image-rendering: pixelated; }
+        
+        canvas { 
+            border: 4px solid #fff; 
+            border-radius: 4px;
+            background: #5c94fc; 
+            max-width: 100%; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            image-rendering: pixelated; 
+        }
+        
         .highscore-box { width: 100%; margin-top: 20px; border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; }
         table { border-collapse: collapse; width: 100%; color: white; }
         th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; }
         .highlight { color: #00ff00; font-weight: bold; }
         .hidden { display: none !important; }
+
         #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; }
-        @media (max-width: 600px) { #home-btn { top: 60px !important; left: 15px !important; } h1 { margin-top: 100px; } #jump-btn { display: block; } }
+
+        @media (max-width: 600px) {
+            #home-btn { top: 60px !important; left: 15px !important; }
+            h1 { margin-top: 100px; }
+            #jump-btn { display: block; }
+        }
     </style>
 </head>
 <body>
-    <button id="home-btn" onclick="window.location.href='lobby.html'">🏠 HOME</button>
+
+    <button onclick="window.location.href='lobby.html'" class="btn-home">🏠 HOME</button>
+    
     <div id="status-display" class="status-online">ONLINE 🟢</div>
+
     <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
-    <div id="user-sidebar"><div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div><div id="user-list-container"><small style="color:#666">Suche Signale...</small></div></div>
+    <div id="user-sidebar">
+        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
+        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
+    </div>
 
     <div class="main-layout">
         <div id="start-screen" style="text-align: center;">
             <h1 style="color: #ff0000; font-size: 3rem; text-shadow: 4px 4px 0px #000; margin: 0; font-family: Impact, sans-serif; letter-spacing: 2px;">SUPER MBA BROS</h1>
             <div style="background: #e52521; color: white; display: inline-block; padding: 5px 15px; font-weight: bold; transform: rotate(-3deg); border: 2px solid white; margin-bottom: 20px;">RUNNER EDITION</div>
+            
             <h2 id="welcome-msg">Lade Profil...</h2>
-            <p style="color: #fff; font-size: 0.9rem; background: #000; display: inline-block; padding: 5px;">[LEERTASTE] oder [TAP] zum Springen</p><br>
-            <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #00aa00; color: #fff; border: 4px solid #fff; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #006600; transition: all 0.1s;">START RUN</button>
+            <p style="color: #fff; font-size: 0.9rem; background: #000; display: inline-block; padding: 5px;">[LEERTASTE] oder [TAP] zum Springen</p>
+            <br>
+            <button id="btn-start-game" style="margin-top: 20px; padding: 15px 40px; font-size: 1.5rem; background: #00aa00; color: #fff; border: 4px solid #fff; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #006600; transition: all 0.1s;">
+                START RUN
+            </button>
         </div>
+
         <div id="game-view" class="hidden" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
             <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; background: #000; padding: 5px; box-sizing: border-box; border: 2px solid #fff;">
-                <span id="displayName" style="color:#fff;">MARIO</span><span style="color:#fff;">SCORE <span id="score-display" style="color:#ffcc00;">000000</span></span>
+                <span id="displayName" style="color:#fff;">MARIO</span>
+                <span style="color:#fff;">SCORE <span id="score-display" style="color:#ffcc00;">000000</span></span>
             </div>
             <canvas id="gameCanvas" width="600" height="300"></canvas>
-            <button id="jump-btn" ontouchstart="_0xJump(event)" onclick="_0xJump(event)">JUMP 🦘</button>
+            <button id="jump-btn" ontouchstart="userJump(event)" onclick="userJump(event)">JUMP 🦘</button>
         </div>
-        <div class="highscore-box"><h3 style="color:#00ff00; text-align: center; margin: 0 0 10px 0;">🏆 RUNNER TOP 20</h3><table><tbody id="leaderboard-body"><tr><td>Lade Daten...</td></tr></tbody></table></div>
+
+        <div class="highscore-box">
+            <h3 style="color:#00ff00; text-align: center; margin: 0 0 10px 0;">🏆 RUNNER TOP 20</h3>
+            <table><tbody id="leaderboard-body"><tr><td>Lade Daten...</td></tr></tbody></table>
+        </div>
     </div>
 
     <script type="module">
@@ -60,90 +133,257 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // CONFIG
-        const _0xcfg = { apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0", authDomain: "mba-arcade.firebaseapp.com", projectId: "mba-arcade", storageBucket: "mba-arcade.firebasestorage.app", messagingSenderId: "497628563783", appId: "1:497628563783:web:a6a0a272fb97b60bbf6462" };
-        const app = initializeApp(_0xcfg); const db = getFirestore(app); const auth = getAuth(app);
+        const firebaseConfig = {
+            apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
+            authDomain: "mba-arcade.firebaseapp.com",
+            projectId: "mba-arcade",
+            storageBucket: "mba-arcade.firebasestorage.app",
+            messagingSenderId: "497628563783",
+            appId: "1:497628563783:web:a6a0a272fb97b60bbf6462"
+        };
 
-        let _0xPl = "Gast"; let _0xRun = false;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // UI & PRESENCE
-        function _0xUpd() { const el = document.getElementById('status-display'); if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; _0xLoad(); } else{ el.innerText="OFFLINE 🔴"; el.className="status-offline"; } }
-        window.addEventListener('online', _0xUpd); window.addEventListener('offline', _0xUpd); _0xUpd();
+        let playerName = "Gast";
+        let gameIsRunning = false;
+
+        // --- PRESENCE & UI ---
+        function updateOnlineStatus() {
+            const el = document.getElementById('status-display');
+            if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; loadLeaderboard(); }
+            else{ el.innerText="OFFLINE 🔴"; el.className="status-offline"; }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
         window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
 
-        function _0xPres(email, name) {
-            const beat = async () => { await setDoc(doc(db, "online_status", email), { name: name, avatar: localStorage.getItem('mba_avatar')||"100.jpg", last_seen: new Date().getTime() }); };
-            beat(); setInterval(beat, 30000);
-            onSnapshot(query(collection(db, "online_status")), (s) => {
-                const l = document.getElementById('user-list-container'); const b = document.getElementById('active-user-count'); const n = new Date().getTime(); let a = [];
-                s.forEach(d => { if(n - d.data().last_seen < 120000) a.push(d.data()); }); a.sort((x,y)=>x.name.localeCompare(y.name)); b.innerText = a.length;
-                if(a.length===0){ l.innerHTML='<div style="color:#666;padding:10px;">Keine Signale.</div>'; return;}
-                let h = ""; a.forEach(u => { const st = (u.name===name) ? "border-color:#00ff00; background:#002200;" : ""; h+=`<div class="user-list-item" style="${st}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div style="font-size:0.7rem;color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`; }); l.innerHTML = h;
+        function startPresenceSystem(userEmail, userName) {
+            const updateHeartbeat = async () => {
+                const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
+                await setDoc(doc(db, "online_status", userEmail), { name: userName, avatar: currentAvatar, last_seen: new Date().getTime() });
+            };
+            updateHeartbeat(); setInterval(updateHeartbeat, 30000);
+            
+            onSnapshot(query(collection(db, "online_status")), (snap) => {
+                const list = document.getElementById('user-list-container');
+                const badge = document.getElementById('active-user-count');
+                const now = new Date().getTime();
+                let active = [];
+                snap.forEach(d => { if(now - d.data().last_seen < 120000) active.push(d.data()); });
+                active.sort((a,b)=>a.name.localeCompare(b.name));
+                badge.innerText = active.length;
+                if(active.length===0){ list.innerHTML='<div style="color:#666;padding:10px;">Keine Signale.</div>'; return;}
+                let html = "";
+                active.forEach(u => {
+                    const style = (u.name===userName) ? "border-color:#00ff00; background:#002200;" : "";
+                    html+=`<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div style="font-size:0.7rem;color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
+                });
+                list.innerHTML = html;
             });
         }
 
-        onAuthStateChanged(auth, (u) => { if(u) { _0xPl = u.email.replace("@mba-arcade.com", ""); document.getElementById('welcome-msg').innerText = "Hallo " + _0xPl + "!"; document.getElementById('displayName').innerText = _0xPl.toUpperCase(); _0xPres(u.email, _0xPl); _0xLoad(); } else { window.location.href = "index.html"; } });
-
-        // GAME ENGINE
-        const cvs = document.getElementById('gameCanvas'); const ctx = cvs.getContext('2d');
-        let _0xF = 0; let _0xS = 0; let _0xL; let _0xSp = 5; let _0xW = 0;
-        const _0xM = { x: 50, y: 200, w: 30, h: 30, dy: 0, jp: -13, g: false }; const _0xG = 50; let _0xO = []; let _0xC = [];
-
-        function _0xStart() { document.getElementById('start-screen').classList.add('hidden'); document.getElementById('game-view').classList.remove('hidden'); _0xRun = true; _0xReset(); _0xLoop(); }
-        function _0xReset() { _0xF = 0; _0xS = 0; _0xSp = 5; _0xM.y = cvs.height - _0xG - _0xM.h; _0xM.dy = 0; _0xO = []; _0xC = [{x: 100, y: 50}, {x: 400, y: 80}, {x: 700, y: 40}]; }
-        
-        function _0xJump(e) { if(e) e.preventDefault(); if(_0xM.g) { _0xM.dy = _0xM.jp; _0xM.g = false; } }
-        window._0xJump = _0xJump; document.addEventListener('keydown', (e) => { if(e.code === 'Space') _0xJump(); });
-
-        function _0xLoop() {
-            if(!_0xRun) return; ctx.clearRect(0, 0, cvs.width, cvs.height); _0xF++; if(_0xF % 10 === 0) _0xW = (_0xW + 1) % 2;
-            _0xDrC(); _0xM.dy += 0.7; _0xM.y += _0xM.dy;
-            if (_0xM.y + _0xM.h > cvs.height - _0xG) { _0xM.y = cvs.height - _0xG - _0xM.h; _0xM.dy = 0; _0xM.g = true; }
-            if (_0xF % Math.floor(Math.random() * 50 + 100) === 0) { let h = Math.random() > 0.5 ? 40 : 60; _0xO.push({ x: cvs.width, y: cvs.height - _0xG - h, w: 40, h: h }); }
-            for (let i = 0; i < _0xO.length; i++) {
-                let o = _0xO[i]; o.x -= _0xSp; _0xDrP(o.x, o.y, o.w, o.h);
-                if (_0xM.x + 5 < o.x + o.w && _0xM.x + _0xM.w - 5 > o.x && _0xM.y + 5 < o.y + o.h && _0xM.y + _0xM.h > o.y) _0xOver();
-                if (o.x + o.w < 0) { _0xO.shift(); i--; }
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                playerName = user.email.replace("@mba-arcade.com", "");
+                document.getElementById('welcome-msg').innerText = "Hallo " + playerName + "!";
+                document.getElementById('displayName').innerText = playerName.toUpperCase();
+                startPresenceSystem(user.email, playerName);
+                loadLeaderboard();
+            } else {
+                window.location.href = "index.html";
             }
-            _0xDrG(); _0xDrM(_0xM.x, _0xM.y);
-            _0xS = Math.floor(_0xF / 5); document.getElementById('score-display').innerText = _0xS.toString().padStart(6, '0');
-            if(_0xF % 500 === 0) _0xSp += 0.5;
-            _0xL = requestAnimationFrame(_0xLoop);
+        });
+
+        // --- GAME ENGINE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let frame = 0;
+        let score = 0;
+        let gameLoop;
+        let speed = 5;
+        let walkCycle = 0;
+
+        // ENTITIES
+        const mario = { x: 50, y: 200, width: 30, height: 30, dy: 0, jumpPower: -13, grounded: false };
+        const groundHeight = 50;
+        let obstacles = [];
+        let clouds = [];
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            gameIsRunning = true;
+            resetGame();
+            loop();
         }
 
-        // DRAWING
-        function _0xDrM(x, y) {
-            ctx.fillStyle = '#ff0000'; ctx.fillRect(x + 5, y + 10, 20, 10); ctx.fillStyle = '#0000aa'; ctx.fillRect(x + 8, y + 20, 14, 8);
-            if(_0xM.g && _0xW === 0) { ctx.fillRect(x + 5, y + 28, 8, 4); } else if (_0xM.g && _0xW === 1) { ctx.fillRect(x + 18, y + 28, 8, 4); } else { ctx.fillRect(x + 2, y + 25, 8, 5); ctx.fillRect(x + 20, y + 22, 8, 5); }
-            ctx.fillStyle = '#ffccaa'; ctx.fillRect(x + 5, y, 20, 10); ctx.fillStyle = '#ff0000'; ctx.fillRect(x + 5, y - 2, 22, 4); ctx.fillRect(x + 5, y - 2, 12, 6); ctx.fillStyle = '#000'; ctx.fillRect(x + 18, y + 6, 6, 2); ctx.fillRect(x + 5, y + 6, 4, 4);
-        }
-        function _0xDrP(x, y, w, h) { ctx.fillStyle = '#00aa00'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#004400'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h); ctx.fillStyle = '#00cc00'; ctx.fillRect(x - 2, y, w + 4, 15); ctx.strokeRect(x - 2, y, w + 4, 15); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(x + 5, y + 2, 4, h - 2); }
-        function _0xDrG() { ctx.fillStyle = '#c84c0c'; ctx.fillRect(0, cvs.height - _0xG, cvs.width, _0xG); ctx.fillStyle = '#000'; let off = (_0xF * _0xSp) % 40; for(let i = -40; i < cvs.width; i+=40) { ctx.fillRect(i - off, cvs.height - _0xG, 38, 38); ctx.fillStyle = '#e86a17'; ctx.fillRect(i - off + 2, cvs.height - _0xG + 2, 34, 34); ctx.fillStyle = '#000'; } ctx.fillStyle = '#00cc00'; ctx.fillRect(0, cvs.height - _0xG, cvs.width, 10); }
-        function _0xDrC() { ctx.fillStyle = 'white'; _0xC.forEach(c => { c.x -= _0xSp * 0.2; if(c.x < -100) c.x = cvs.width + 50; ctx.beginPath(); ctx.arc(c.x, c.y, 20, 0, Math.PI * 2); ctx.arc(c.x + 25, c.y - 10, 25, 0, Math.PI * 2); ctx.arc(c.x + 50, c.y, 20, 0, Math.PI * 2); ctx.fill(); }); }
-
-        function _0xOver() {
-            _0xRun = false; cancelAnimationFrame(_0xL);
-            ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, cvs.width, cvs.height); ctx.fillStyle = "white"; ctx.font = "30px Courier New"; ctx.fillText("GAME OVER", cvs.width/2 - 80, cvs.height/2);
-            _0xSv(_0xS); setTimeout(() => { alert("Game Over! Score: " + _0xS); document.getElementById('start-screen').classList.remove('hidden'); document.getElementById('game-view').classList.add('hidden'); }, 100);
+        function resetGame() {
+            frame = 0; score = 0; speed = 5;
+            mario.y = canvas.height - groundHeight - mario.height;
+            mario.dy = 0;
+            obstacles = [];
+            clouds = [{x: 100, y: 50}, {x: 400, y: 80}, {x: 700, y: 40}];
         }
 
-        async function _0xLoad() {
-            if (!navigator.onLine) return; const t = document.getElementById('leaderboard-body');
+        function userJump(e) {
+            if(e) e.preventDefault();
+            if(mario.grounded) {
+                mario.dy = mario.jumpPower;
+                mario.grounded = false;
+            }
+        }
+        window.userJump = userJump; 
+        document.addEventListener('keydown', (e) => { if(e.code === 'Space') userJump(); });
+
+        function loop() {
+            if(!gameIsRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frame++;
+            if(frame % 10 === 0) walkCycle = (walkCycle + 1) % 2; 
+
+            // BACKGROUND
+            drawClouds();
+
+            // PHYSICS
+            mario.dy += 0.7; 
+            mario.y += mario.dy;
+
+            if (mario.y + mario.height > canvas.height - groundHeight) {
+                mario.y = canvas.height - groundHeight - mario.height;
+                mario.dy = 0;
+                mario.grounded = true;
+            }
+
+            // OBSTACLE LOGIC
+            if (frame % Math.floor(Math.random() * 50 + 100) === 0) {
+                let height = Math.random() > 0.5 ? 40 : 60; 
+                obstacles.push({ x: canvas.width, y: canvas.height - groundHeight - height, width: 40, height: height, passed: false });
+            }
+
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.x -= speed;
+                drawPipe(obs.x, obs.y, obs.width, obs.height);
+
+                if (mario.x + 5 < obs.x + obs.width &&
+                    mario.x + mario.width - 5 > obs.x &&
+                    mario.y + 5 < obs.y + obs.height &&
+                    mario.y + mario.height > obs.y) {
+                    gameOver();
+                }
+
+                if (obs.x + obs.width < 0) {
+                    obstacles.shift();
+                    i--;
+                }
+            }
+
+            drawGround();
+            drawMario(mario.x, mario.y);
+
+            // SCORE
+            score = Math.floor(frame / 5);
+            document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
+            
+            if(frame % 500 === 0) speed += 0.5;
+
+            gameLoop = requestAnimationFrame(loop);
+        }
+
+        // --- DRAWING FUNCTIONS ---
+        function drawMario(x, y) {
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(x + 5, y + 10, 20, 10);
+            ctx.fillStyle = '#0000aa'; ctx.fillRect(x + 8, y + 20, 14, 8);
+            if(mario.grounded && walkCycle === 0) { ctx.fillRect(x + 5, y + 28, 8, 4); } 
+            else if (mario.grounded && walkCycle === 1) { ctx.fillRect(x + 18, y + 28, 8, 4); } 
+            else { ctx.fillRect(x + 2, y + 25, 8, 5); ctx.fillRect(x + 20, y + 22, 8, 5); }
+            ctx.fillStyle = '#ffccaa'; ctx.fillRect(x + 5, y, 20, 10);
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(x + 5, y - 2, 22, 4); ctx.fillRect(x + 5, y - 2, 12, 6);
+            ctx.fillStyle = '#000'; ctx.fillRect(x + 18, y + 6, 6, 2); ctx.fillRect(x + 5, y + 6, 4, 4);
+        }
+
+        function drawPipe(x, y, w, h) {
+            ctx.fillStyle = '#00aa00'; ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#004400'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = '#00cc00'; ctx.fillRect(x - 2, y, w + 4, 15); ctx.strokeRect(x - 2, y, w + 4, 15);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(x + 5, y + 2, 4, h - 2);
+        }
+
+        function drawGround() {
+            ctx.fillStyle = '#c84c0c'; ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            ctx.fillStyle = '#000'; 
+            let offset = (frame * speed) % 40;
+            for(let i = -40; i < canvas.width; i+=40) {
+                ctx.fillRect(i - offset, canvas.height - groundHeight, 38, 38);
+                ctx.fillStyle = '#e86a17'; ctx.fillRect(i - offset + 2, canvas.height - groundHeight + 2, 34, 34);
+                ctx.fillStyle = '#000';
+            }
+            ctx.fillStyle = '#00cc00'; ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'white';
+            clouds.forEach(c => {
+                c.x -= speed * 0.2; 
+                if(c.x < -100) c.x = canvas.width + 50;
+                ctx.beginPath(); ctx.arc(c.x, c.y, 20, 0, Math.PI * 2); ctx.arc(c.x + 25, c.y - 10, 25, 0, Math.PI * 2); ctx.arc(c.x + 50, c.y, 20, 0, Math.PI * 2); ctx.fill();
+            });
+        }
+
+        function gameOver() {
+            gameIsRunning = false;
+            cancelAnimationFrame(gameLoop);
+            
+            ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white"; ctx.font = "30px Courier New"; ctx.fillText("GAME OVER", canvas.width/2 - 80, canvas.height/2);
+            
+            saveScore(score);
+            setTimeout(() => {
+                alert("Game Over! Score: " + score);
+                document.getElementById('start-screen').classList.remove('hidden');
+                document.getElementById('game-view').classList.add('hidden');
+            }, 100);
+        }
+
+        // --- HIGHSCORE LOGIC ---
+        async function loadLeaderboard() {
+            if (!navigator.onLine) return;
+            const tbody = document.getElementById('leaderboard-body');
             try {
-                // LOAD FROM SCORES_MARIO
-                const q = query(collection(db, "scores_mario"), orderBy("score", "desc"), limit(20)); const s = await getDocs(q);
-                t.innerHTML = ""; let r = 1;
-                s.forEach(d => { const e = d.data(); let i = r===1?"🥇":r===2?"🥈":r===3?"🥉":r+"."; t.innerHTML += `<tr><td>${i}</td><td>${e.name}</td><td class="highlight">${e.score}</td></tr>`; r++; });
-                if(r===1) t.innerHTML="<tr><td>Noch keine Runs.</td></tr>";
-            } catch(e){}
+                // HIER GEÄNDERT: "scores_mario"
+                const q = query(collection(db, "scores_mario"), orderBy("score", "desc"), limit(20)); 
+                const snap = await getDocs(q);
+                tbody.innerHTML = "";
+                let r = 1;
+                snap.forEach(d => {
+                    const e = d.data();
+                    let icon = r===1?"🥇":r===2?"🥈":r===3?"🥉":r+".";
+                    tbody.innerHTML += `<tr><td>${icon}</td><td>${e.name}</td><td class="highlight">${e.score}</td></tr>`;
+                    r++;
+                });
+                if(r === 1) tbody.innerHTML = "<tr><td>Noch keine Runs.</td></tr>";
+            } catch(e){console.error(e);}
         }
 
-        async function _0xSv(p) {
+        async function saveScore(p) {
             if(!navigator.onLine) return;
-            try { await addDoc(collection(db, "scores_mario"), { name: _0xPl, score: p, date: new Date().toLocaleDateString('de-DE') }); _0xLoad(); } catch(e){}
+            try {
+                // HIER GEÄNDERT: "scores_mario"
+                await addDoc(collection(db, "scores_mario"), { 
+                    name: playerName, 
+                    score: p, 
+                    date: new Date().toLocaleDateString('de-DE')
+                });
+                loadLeaderboard();
+            } catch(e){console.error("Score Save Error:", e);}
         }
 
-        document.getElementById('btn-start-game').addEventListener('click', _0xStart);
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
     </script>
 </body>
 </html>
