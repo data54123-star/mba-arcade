@@ -38,6 +38,31 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
+        /* --- ACTIVE USER SIDEBAR (NEU HINZUGEFÜGT) --- */
+        #user-sidebar {
+            position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
+            background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
+            z-index: 2000; transition: right 0.3s ease-in-out, border-color 0.3s;
+            padding: 20px; box-shadow: none; overflow-y: auto;
+        }
+        #user-sidebar.open { right: 0; border-left: 2px solid #00ff00; box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2); }
+        .sidebar-header { font-size: 1.2rem; color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { cursor: pointer; font-size: 1.5rem; }
+        .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
+        .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
+        .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
+        #toggle-users-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #000; color: #00ff00; border: 2px solid #00ff00;
+            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
+            font-size: 1.5rem; cursor: pointer; z-index: 1900;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); display: flex; justify-content: center; align-items: center; transition: all 0.2s;
+        }
+        #toggle-users-btn:hover { transform: scale(1.1); background: #111; }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+
         .btn { 
             background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
             cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
@@ -134,6 +159,12 @@
     <button onclick="window.location.href='lobby.html'" class="btn-home">🏠 HOME</button>
     <div id="status-display" class="status-online">ONLINE 🟢</div>
 
+    <div id="toggle-users-btn" onclick="toggleSidebar()">👥<span id="active-user-count" class="badge-count">0</span></div>
+    <div id="user-sidebar">
+        <div class="sidebar-header"><span>COMM-LINK</span><span class="close-btn" onclick="toggleSidebar()">✖</span></div>
+        <div id="user-list-container"><small style="color:#666">Suche Signale...</small></div>
+    </div>
+
     <div id="view-start" class="view active">
         <h1>🐎 MULTIPLAYER DERBY</h1>
         <p>Erstelle eine Runde oder tritt bei.</p>
@@ -194,7 +225,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // CONFIG
@@ -217,6 +248,7 @@
         let myBetSuit = null;
         let playerName = "Gast";
 
+        // --- GLOBAL UI & PRESENCE ---
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) { statusEl.innerText = "ONLINE 🟢"; statusEl.className = "status-online"; } 
@@ -226,10 +258,48 @@
         window.addEventListener('offline', updateOnlineStatus);
         updateOnlineStatus();
 
+        // --- PRESENCE SYSTEM (NEU HINZUGEFÜGT) ---
+        window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
+
+        function startPresenceSystem(userEmail, userName) {
+            const updateHeartbeat = async () => {
+                const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
+                await setDoc(doc(db, "online_status", userEmail), {
+                    name: userName, avatar: currentAvatar, last_seen: new Date().getTime()
+                });
+            };
+            updateHeartbeat();
+            setInterval(updateHeartbeat, 30000);
+
+            const q = query(collection(db, "online_status"));
+            onSnapshot(q, (snapshot) => {
+                const listContainer = document.getElementById('user-list-container');
+                const badge = document.getElementById('active-user-count');
+                const now = new Date().getTime();
+                const timeout = 2 * 60 * 1000;
+                let activeUsers = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (now - data.last_seen < timeout) activeUsers.push(data);
+                });
+                activeUsers.sort((a,b) => a.name.localeCompare(b.name));
+                badge.innerText = activeUsers.length;
+                if(activeUsers.length === 0) { listContainer.innerHTML = '<div style="color:#666; padding:10px;">Keine aktiven Signale.</div>'; return; }
+                let html = "";
+                activeUsers.forEach(u => {
+                    const isMe = (u.name === userName);
+                    const style = isMe ? "border-color:#00ff00; background: #002200;" : "";
+                    html += `<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold; color:white;">${u.name} ${isMe ? '(Du)' : ''}</div><div style="font-size:0.7rem; color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
+                });
+                listContainer.innerHTML = html;
+            });
+        }
+
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
                 playerName = user.email.replace("@mba-arcade.com", "");
+                startPresenceSystem(user.email, playerName); // PRESENCE STARTEN
                 loadLobbies();
             } else {
                 window.location.href = "index.html";
@@ -238,7 +308,6 @@
 
         // --- LOBBY LOGIC ---
         function loadLobbies() {
-            // WICHTIG: Hier prüfen wir auf "status", da das im Code nun einheitlich ist
             const q = query(collection(db, "lobbies"), where("status", "==", "waiting"));
             onSnapshot(q, (snapshot) => {
                 const list = document.getElementById('lobby-list');
@@ -263,7 +332,6 @@
                 hostName: playerName,
                 status: "waiting", // Einheitlich: "status"
                 createdAt: new Date(),
-                // Initial player list
                 players: [{ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false }],
                 gameState: null
             };
@@ -290,15 +358,13 @@
         }
 
         function renderLobbyRoom(data) {
-            // Check if I am in the player list, if not add me
-            const me = data.players.find(p => p.name === playerName); // Identify by Name for safety
+            const me = data.players.find(p => p.name === playerName); 
             if(!me) {
                 const avatar = localStorage.getItem('mba_avatar') || '100.jpg';
-                // Add myself using arrayUnion to avoid overwriting others
                 updateDoc(doc(db, "lobbies", currentLobbyId), {
                     players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false })
                 });
-                return; // Wait for next update
+                return; 
             }
 
             isHost = (data.hostId === currentUser.uid);
@@ -321,12 +387,10 @@
 
             document.getElementById('player-count').innerText = data.players.length;
 
-            // Host Controls
             if(isHost) {
                 document.getElementById('host-controls').style.display = 'block';
                 const startBtn = document.getElementById('btn-start-game');
                 const msg = document.getElementById('host-status-msg');
-                // Allow start only if everyone is ready
                 const allReady = (data.players.length > 0 && readyCount === data.players.length);
                 
                 startBtn.disabled = !allReady;
@@ -334,10 +398,8 @@
                 msg.style.color = allReady ? "#00ff00" : "#aaa";
             }
 
-            // Hide betting if I am ready
             if(me.ready) document.getElementById('betting-controls').style.display = 'none';
 
-            // Game State Transitions
             if(data.status === 'racing') startGameClient(data);
             if(data.status === 'finished') showResults(data);
         }
@@ -345,7 +407,6 @@
         // --- BETTING LOGIC ---
         window.selectBet = function(suit, element) {
             myBetSuit = suit;
-            // Visual feedback
             document.querySelectorAll('.bet-option').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
         }
@@ -354,12 +415,10 @@
             const amount = parseInt(document.getElementById('bet-amount').value);
             if(!myBetSuit || amount <= 0) { alert("Bitte Wette wählen!"); return; }
 
-            // Safe update: Read current data, modify my entry, write back
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = snap.docs[0].data();
             
-            // Rebuild player list with my new status
             const newPlayers = data.players.map(p => {
                 if(p.name === playerName) return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
                 return p;
@@ -383,7 +442,7 @@
             };
 
             await updateDoc(doc(db, "lobbies", currentLobbyId), {
-                status: 'racing', // Set status to racing
+                status: 'racing', 
                 gameState: gameState
             });
         }
@@ -398,18 +457,15 @@
             const card = gs.deck.pop();
             gs.lastDrawnCard = card;
 
-            // Movement Logic
             if(!gs.finishedOrder.includes(card.suit)) {
                 gs.positions[card.suit]++;
             }
 
-            // Finish check (Goal is 8 steps)
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
                 gs.positions[card.suit] = 8; 
             }
 
-            // Penalty Logic
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
             for(let i=0; i<7; i++) {
                 if(minPos >= (i+1) && !gs.penaltyRevealed[i]) {
@@ -421,7 +477,6 @@
                 }
             }
 
-            // Game Over Check (When 3 finished, we know the 4th is last)
             if(gs.finishedOrder.length === 3) {
                 const allSuits = ['♦', '♥', '♠', '♣'];
                 const loser = allSuits.find(s => !gs.finishedOrder.includes(s));
@@ -449,7 +504,6 @@
             const container = document.getElementById('grid-target');
             container.innerHTML = "";
             
-            // Penalty Row
             container.innerHTML += `<div class="cell"></div>`;
             for(let i=0; i<7; i++) {
                 let content = `<div class="card card-back"></div>`;
@@ -462,14 +516,12 @@
             }
             container.innerHTML += `<div class="cell"></div>`;
 
-            // Horse Rows
             const suits = ['♦', '♥', '♠', '♣'];
             suits.forEach(suit => {
                 const pos = gs.positions[suit];
                 const color = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
                 for(let i=0; i<=8; i++) {
                     let cls = i===8 ? "cell cell-goal" : "cell";
-                    // Render horse as a card ace
                     let content = (pos === i) ? `<div class="card ${color}" style="transform:scale(0.9); border: 2px solid gold;">${suit}</div>` : "";
                     container.innerHTML += `<div class="${cls}">${content}</div>`;
                 }
@@ -540,6 +592,7 @@
         window.hostStartGame = hostStartGame;
         window.hostDrawCard = hostDrawCard;
         window.deleteLobby = deleteLobby;
+        window.toggleSidebar = toggleSidebar; // Sidebar Funktion exposed
     </script>
 </body>
 </html>
