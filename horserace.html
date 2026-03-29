@@ -38,7 +38,7 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
-        /* --- ACTIVE USER SIDEBAR (NEU HINZUGEFÜGT) --- */
+        /* --- ACTIVE USER SIDEBAR --- */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
@@ -258,7 +258,7 @@
         window.addEventListener('offline', updateOnlineStatus);
         updateOnlineStatus();
 
-        // --- PRESENCE SYSTEM (NEU HINZUGEFÜGT) ---
+        // --- PRESENCE SYSTEM ---
         window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
 
         function startPresenceSystem(userEmail, userName) {
@@ -299,7 +299,7 @@
             if (user) {
                 currentUser = user;
                 playerName = user.email.replace("@mba-arcade.com", "");
-                startPresenceSystem(user.email, playerName); // PRESENCE STARTEN
+                startPresenceSystem(user.email, playerName);
                 loadLobbies();
             } else {
                 window.location.href = "index.html";
@@ -315,10 +315,14 @@
                 if(snapshot.empty) list.innerHTML = "<p style='color:#888'>Keine offenen Lobbys.</p>";
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    // NEU: Hinzufügen des "Löschen" Buttons in die Liste
                     list.innerHTML += `
                         <div class="lobby-card">
                             <div><strong>Host: ${data.hostName}</strong><br><small>Spieler: ${data.players ? data.players.length : 0}</small></div>
-                            <button class="btn" style="width: auto;" onclick="joinLobby('${doc.id}')">BEITRETEN</button>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button class="btn" style="width: auto; margin: 0;" onclick="joinLobby('${doc.id}')">BEITRETEN</button>
+                                <button class="btn btn-danger" style="width: auto; margin: 0; padding: 10px 15px;" onclick="deleteDeadLobby('${doc.id}')" title="Lobby löschen">✖</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -330,7 +334,7 @@
             const lobbyData = {
                 hostId: currentUser.uid,
                 hostName: playerName,
-                status: "waiting", // Einheitlich: "status"
+                status: "waiting", 
                 createdAt: new Date(),
                 players: [{ uid: currentUser.uid, name: playerName, avatar: avatar, betAmount: 0, betSuit: null, ready: false }],
                 gameState: null
@@ -351,9 +355,21 @@
             });
         }
 
+        // FÜR DEN HOST INNERHALB DER LOBBY
         window.deleteLobby = async function() {
             if(confirm("Möchtest du diese Lobby wirklich löschen?")) {
                 await deleteDoc(doc(db, "lobbies", currentLobbyId));
+            }
+        }
+
+        // NEU: UM VERLASSENE LOBBYS AUS DER LISTE ZU LÖSCHEN
+        window.deleteDeadLobby = async function(id) {
+            if(confirm("Möchtest du diese verlassene Lobby wirklich aufräumen?")) {
+                try {
+                    await deleteDoc(doc(db, "lobbies", id));
+                } catch(e) {
+                    console.error("Fehler beim Löschen:", e);
+                }
             }
         }
 
@@ -592,7 +608,8 @@
         window.hostStartGame = hostStartGame;
         window.hostDrawCard = hostDrawCard;
         window.deleteLobby = deleteLobby;
-        window.toggleSidebar = toggleSidebar; // Sidebar Funktion exposed
+        window.deleteDeadLobby = deleteDeadLobby; // NEUE LÖSCHFUNKTION EXPOSED
+        window.toggleSidebar = toggleSidebar; 
     </script>
 </body>
 </html>
