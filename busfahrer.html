@@ -116,10 +116,9 @@
                 position: relative; top: auto; right: auto; width: 100%; 
                 margin-top: 70px; margin-bottom: 10px; display: block; box-sizing: border-box; 
             } 
-            #game-instruction { margin-top: 10px; } /* Verhindert doppelten Abstand, weil Scoreboard schon puffert */
+            #game-instruction { margin-top: 10px; }
         }
         
-        /* HIER IST DER FIX FÜR DIE 7 KARTEN AUF MOBILE */
         @media (max-width: 500px) {
             .bus-path-container { gap: 4px; }
             .bus-path-card { width: 42px !important; height: 63px !important; font-size: 0.9rem !important; border-width: 1px !important; min-width: auto !important; }
@@ -149,6 +148,11 @@
             <p id="modal-msg">Wähle ein Opfer:</p>
             <div id="modal-player-list" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
         </div>
+    </div>
+
+    <div id="scoreboard">
+        <strong>PUNKTE (SCHLUCKE)</strong>
+        <div id="score-list"></div>
     </div>
 
     <div id="view-start" class="view active">
@@ -188,6 +192,8 @@
         <div id="host-game-controls" style="margin-top: 20px; display: none;">
             <button class="btn" onclick="hostNextAction()" id="btn-host-action">WEITER</button>
         </div>
+        
+        <div style="height: 130px; width: 100%;"></div>
     </div>
 
     <div id="view-result" class="view">
@@ -309,7 +315,7 @@
             }
             
             // Scoreboard in Lobby immer verstecken!
-            document.getElementById('scoreboard').style.display = "none";
+            document.querySelectorAll('#scoreboard').forEach(el => el.style.display = "none");
 
             isHost = (data.hostId === currentUser.uid);
             const l = document.getElementById('lobby-players'); l.innerHTML = "";
@@ -334,9 +340,12 @@
             const me = data.players.find(p => p.uid === currentUser.uid);
             
             // Scoreboard Update
-            const sl = document.getElementById('score-list'); sl.innerHTML = "";
-            document.getElementById('scoreboard').style.display = "block"; // Wird jetzt vom CSS positioniert
-            data.players.forEach(p => sl.innerHTML += `<div>${p.name}: <span style="color:${p.score>0?'red':'#00ff00'}">${p.score}</span></div>`);
+            const sl = document.querySelector('#view-game #score-list'); 
+            if(sl) {
+                sl.innerHTML = "";
+                document.querySelector('#view-game #scoreboard').style.display = "block"; 
+                data.players.forEach(p => sl.innerHTML += `<div>${p.name}: <span style="color:${p.score>0?'red':'#00ff00'}">${p.score}</span></div>`);
+            }
 
             // My Hand Update
             const handDiv = document.getElementById('my-hand');
@@ -443,7 +452,6 @@
                 let html = `<h3 style="margin-bottom:5px;">${bdName} fährt Bus!</h3>`;
                 html += `<p style="color:yellow; font-weight:bold; margin-top:0;">${msg}</p>`;
 
-                // Rendern der 7 Kartenslots mit der neuen responsiven CSS Klasse
                 html += `<div class="bus-path-container">`;
                 for(let i=0; i<7; i++) {
                     if(i < path.length) {
@@ -661,8 +669,29 @@
                 const newPlayers = data.players.map(p => {
                     const deck = createSkatDeck();
                     const card = deck[Math.floor(Math.random() * deck.length)];
-                    return { ...p, hand: [...p.hand, card], currentGuess: null };
+                    
+                    // NEU: Auswertung der Runden 1-4 & Punkteverteilung
+                    const color = (card.suit === '♥' || card.suit === '♦') ? 'red' : 'black';
+                    let isCorrect = false;
+                    
+                    if (p.currentGuess) {
+                        if(phase === 1 && p.currentGuess === color) isCorrect = true;
+                        else if(phase === 2 && p.currentGuess === card.suit) isCorrect = true;
+                        else if(phase === 3 && p.currentGuess === card.value) isCorrect = true;
+                        else if(phase === 4 && p.currentGuess === (card.suit + card.value)) isCorrect = true;
+                    }
+                    
+                    // Bei falschem Tipp gibt es Strafschlucke in Höhe der aktuellen Runden-Zahl (Runde 1 = 1, Runde 4 = 4)
+                    const penalty = isCorrect ? 0 : phase;
+
+                    return { 
+                        ...p, 
+                        hand: [...p.hand, card], 
+                        currentGuess: null,
+                        score: p.score + penalty
+                    };
                 });
+                
                 const nextPhase = phase + 1;
                 await updateDoc(lobbyRef, { players: newPlayers, "gameState.phase": nextPhase });
             } 
@@ -710,7 +739,8 @@
             document.getElementById('view-result').classList.add('active');
             
             document.getElementById('my-hand').style.display = "none";
-            document.getElementById('scoreboard').style.display = "none";
+            // Scoreboard für Endbildschirm verstecken (wir zeigen es ja nochmal schöner in der Mitte)
+            document.querySelectorAll('#scoreboard').forEach(el => el.style.display = "none");
 
             const list = document.getElementById('result-list');
             let html = `<div style="margin-bottom:20px; padding:10px; border:1px solid #444; border-radius:5px;">
