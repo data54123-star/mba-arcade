@@ -15,13 +15,10 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            /* GEÄNDERT: Erlaubt vertikales Scrollen, blockiert nur horizontales */
             overflow-x: hidden;
         }
 
-        /* --- NEUES DESIGN (WIE HORSERACE) --- */
-        
-        /* HOME BUTTON */
+        /* --- NEUES DESIGN --- */
         .btn-home {
             position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
@@ -30,7 +27,6 @@
             text-decoration: none; font-size: 1rem;
         }
 
-        /* STATUS ANZEIGE (RECHTS) */
         #status-display {
             position: absolute; top: 15px; right: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
@@ -52,37 +48,36 @@
         .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
-        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
+        
+        /* ACTIVE USER BUTTON (STEALTH MODE) */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            width: 50px; height: 50px; 
             font-size: 1.2rem; cursor: pointer; z-index: 1900;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
+            opacity: 0.5; 
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
-            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+            transform: scale(1.1); background: #111; opacity: 1; 
         }
         .badge-count { 
             position: absolute; top: -3px; right: -3px; background: red; color: white; 
             font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 1px solid white; 
         }
 
-        /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
         @media (max-width: 600px) {
             #toggle-users-btn {
-                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
-                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
+                bottom: 10px; right: 10px; 
+                width: 40px; height: 40px; 
                 font-size: 1rem;
-                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+                opacity: 0.3; 
             }
-            .badge-count {
-                font-size: 0.6rem; padding: 1px 4px;
-            }
+            .badge-count { font-size: 0.6rem; padding: 1px 4px; }
         }
+
         /* GAME STYLES */
         .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
         
@@ -93,7 +88,6 @@
             max-width: 100%; 
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
             image-rendering: pixelated; 
-            /* NEU: Verhindert Scrollen beim Wischen über das Spielfeld */
             touch-action: none; 
         }
         
@@ -104,7 +98,6 @@
         .highlight { color: #00ff00; font-weight: bold; }
         .hidden { display: none !important; }
 
-        /* NEU: touch-action: none hinzugefügt, damit Button-Taps das Bild nicht verschieben */
         #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; touch-action: none; }
 
         @media (max-width: 600px) {
@@ -257,14 +250,20 @@
         }
 
         function userJump(e) {
-            if(e) e.preventDefault();
+            if(e) e.preventDefault(); // Verhindert das Scrollen, WENN das Event übergeben wird!
             if(mario.grounded) {
                 mario.dy = mario.jumpPower;
                 mario.grounded = false;
             }
         }
         window.userJump = userJump; 
-        document.addEventListener('keydown', (e) => { if(e.code === 'Space') userJump(); });
+        
+        // HIER GEÄNDERT: Das "e" wird nun in der Funktion an userJump(e) übergeben!
+        document.addEventListener('keydown', (e) => { 
+            if(e.code === 'Space') {
+                userJump(e); 
+            }
+        });
 
         function loop() {
             if(!gameIsRunning) return;
@@ -381,7 +380,6 @@
             if (!navigator.onLine) return;
             const tbody = document.getElementById('leaderboard-body');
             try {
-                // HIER GEÄNDERT: "scores_mario"
                 const q = query(collection(db, "scores_mario"), orderBy("score", "desc"), limit(20)); 
                 const snap = await getDocs(q);
                 tbody.innerHTML = "";
@@ -399,7 +397,6 @@
         async function saveScore(p) {
             if(!navigator.onLine) return;
             try {
-                // HIER GEÄNDERT: "scores_mario"
                 await addDoc(collection(db, "scores_mario"), { 
                     name: playerName, 
                     score: p, 
