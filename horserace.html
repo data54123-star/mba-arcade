@@ -62,7 +62,6 @@
         .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 1px solid white; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-
         .btn { 
             background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
             cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
@@ -91,18 +90,25 @@
         }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
 
-        /* GAME GRID */
+        /* --- GAME GRID FIX --- */
         #race-container {
-            width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
-            display: flex; justify-content: center;
+            width: 100%; 
+            overflow-x: auto; /* Erlaubt horizontales Wischen */
+            padding-bottom: 20px; 
+            margin-top: 20px;
+            /* GEÄNDERT: flex-start statt center, damit es bei kleinem Screen nicht halb-abgeschnitten startet */
+            display: flex; justify-content: flex-start; 
         }
+
+        /* Um es auf breiten Bildschirmen dennoch mittig zu haben, packen wir einen Wrapper rein oder nutzen auto-margins im Grid */
         .race-grid {
             display: grid;
             grid-template-columns: 70px repeat(7, 1fr) 70px; 
             grid-template-rows: 50px repeat(4, 50px); 
             gap: 5px; 
             min-width: 800px; 
-            width: 100%; 
+            /* GEÄNDERT: auto-margins zentrieren das Element im Flex-Container, wenn genug Platz da ist */
+            margin: 0 auto; 
             border: 2px solid #333; padding: 10px; background: #111;
         }
 
@@ -152,6 +158,14 @@
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
+        /* --- MOBILE FIXES --- */
+        @media (max-width: 600px) {
+            /* GEÄNDERT: Schiebt den Header-Bereich im Game View nach unten */
+            .race-header-fix {
+                margin-top: 60px !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -176,7 +190,7 @@
     </div>
 
     <div id="view-lobby" class="view">
-        <h2 id="lobby-title">Lobby</h2>
+        <h2 id="lobby-title" class="race-header-fix">Lobby</h2>
         <p>Warte auf Spieler... (<span id="player-count">0</span>)</p>
         <div class="player-list" id="lobby-players"></div>
 
@@ -201,7 +215,7 @@
     </div>
 
     <div id="view-race" class="view">
-        <div style="display: flex; justify-content: space-between; width: 100%; max-width: 1000px;">
+        <div class="race-header-fix" style="display: flex; justify-content: space-between; width: 100%; max-width: 1000px;">
             <span>🏁 ZIEL: 8 Felder</span>
             <span id="race-status">Rennen läuft...</span>
         </div>
@@ -218,7 +232,7 @@
     </div>
 
     <div id="view-result" class="view">
-        <h1>ERGEBNIS</h1>
+        <h1 class="race-header-fix">ERGEBNIS</h1>
         <div id="result-list" style="width: 100%; max-width: 800px;"></div>
         <button class="btn" onclick="window.location.href='lobby.html'" style="margin-top: 20px;">ZURÜCK ZUR LOBBY</button>
     </div>
@@ -315,7 +329,6 @@
                 if(snapshot.empty) list.innerHTML = "<p style='color:#888'>Keine offenen Lobbys.</p>";
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // NEU: Hinzufügen des "Löschen" Buttons in die Liste
                     list.innerHTML += `
                         <div class="lobby-card">
                             <div><strong>Host: ${data.hostName}</strong><br><small>Spieler: ${data.players ? data.players.length : 0}</small></div>
@@ -355,14 +368,12 @@
             });
         }
 
-        // FÜR DEN HOST INNERHALB DER LOBBY
         window.deleteLobby = async function() {
             if(confirm("Möchtest du diese Lobby wirklich löschen?")) {
                 await deleteDoc(doc(db, "lobbies", currentLobbyId));
             }
         }
 
-        // NEU: UM VERLASSENE LOBBYS AUS DER LISTE ZU LÖSCHEN
         window.deleteDeadLobby = async function(id) {
             if(confirm("Möchtest du diese verlassene Lobby wirklich aufräumen?")) {
                 try {
@@ -608,7 +619,7 @@
         window.hostStartGame = hostStartGame;
         window.hostDrawCard = hostDrawCard;
         window.deleteLobby = deleteLobby;
-        window.deleteDeadLobby = deleteDeadLobby; // NEUE LÖSCHFUNKTION EXPOSED
+        window.deleteDeadLobby = deleteDeadLobby; 
         window.toggleSidebar = toggleSidebar; 
     </script>
 </body>
