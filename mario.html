@@ -14,8 +14,8 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            touch-action: none; 
-            overflow: hidden;
+            /* GEÄNDERT: Erlaubt vertikales Scrollen, blockiert nur horizontales */
+            overflow-x: hidden;
         }
 
         /* --- NEUES DESIGN (WIE HORSERACE) --- */
@@ -70,6 +70,8 @@
             max-width: 100%; 
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
             image-rendering: pixelated; 
+            /* NEU: Verhindert Scrollen beim Wischen über das Spielfeld */
+            touch-action: none; 
         }
         
         .highscore-box { width: 100%; margin-top: 20px; border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; }
@@ -79,7 +81,8 @@
         .highlight { color: #00ff00; font-weight: bold; }
         .hidden { display: none !important; }
 
-        #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; }
+        /* NEU: touch-action: none hinzugefügt, damit Button-Taps das Bild nicht verschieben */
+        #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; touch-action: none; }
 
         @media (max-width: 600px) {
             #home-btn { top: 60px !important; left: 15px !important; }
