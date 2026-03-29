@@ -90,15 +90,11 @@
         }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
 
-        /* --- GAME GRID --- */
+        /* GAME GRID */
         #race-container {
-            width: 100%; 
-            overflow-x: auto; 
-            padding-bottom: 20px; 
-            margin-top: 20px;
-            display: flex; justify-content: flex-start; 
+            width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
+            display: flex; justify-content: flex-start;
         }
-
         .race-grid {
             display: grid;
             grid-template-columns: 70px repeat(7, 1fr) 70px; 
@@ -156,12 +152,11 @@
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
         /* --- GLOBAL FIXES --- */
-        /* GEÄNDERT: Diese Klasse erzwingt jetzt ÜBERALL (auch im Landscape-Modus) einen Abstand nach oben */
+        /* HIER GEÄNDERT: Diese Regel steht jetzt global, also gilt sie auch im Querformat! */
         .race-header-fix {
             margin-top: 60px !important;
             width: 100%;
         }
-
     </style>
 </head>
 <body>
@@ -504,6 +499,8 @@
                 const allSuits = ['♦', '♥', '♠', '♣'];
                 const loser = allSuits.find(s => !gs.finishedOrder.includes(s));
                 gs.finishedOrder.push(loser);
+                
+                // Wir übergeben das GESTARTETE finishedOrder-Array zur finalen Speicherung!
                 calculateResults(data.players, gs.finishedOrder); 
                 return; 
             }
@@ -570,8 +567,9 @@
                 
                 return { ...p, payout: profit, resultText: txt };
             });
-            // GEÄNDERT: Wir übergeben hier "gameState.finishedOrder" explizit an die Datenbank, 
-            // damit die letzten beiden Plätze für immer sicher gespeichert sind!
+            
+            // HIER GEÄNDERT: Wir übergeben das Array "finishedOrder" explizit an die Datenbank,
+            // damit die Plätze 3 und 4 für immer sauber abgespeichert werden!
             await updateDoc(doc(db, "lobbies", currentLobbyId), { 
                 players: updatedPlayers, 
                 status: 'finished',
@@ -584,7 +582,8 @@
             document.getElementById('view-result').classList.add('active');
             const list = document.getElementById('result-list');
             
-            // GEÄNDERT: Safety-Fallback eingebaut, falls es mal zu einem extrem schnellen Abbruch kommt.
+            // SICHERHEITS-FALLBACK: Falls die Datenbank aus irgendeinem Grund
+            // doch noch unvollständig geladen wurde, füllen wir auf.
             let o = data.gameState.finishedOrder || [];
             const allSuits = ['♦', '♥', '♠', '♣'];
             const missing = allSuits.filter(suit => !o.includes(suit));
