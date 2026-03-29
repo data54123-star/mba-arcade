@@ -89,6 +89,10 @@
         .pyramid-container { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; margin-top: 20px; width: 100%; overflow-x: auto; }
         .pyramid-row { display: flex; gap: 10px; justify-content: center; }
         
+        /* BUSFAHRT (Runde 6) */
+        .bus-path-container { display: flex; gap: 10px; margin: 20px 0; width: 100%; justify-content: center; padding-bottom: 10px; }
+        .bus-path-card { width: 60px; height: 90px; }
+
         /* SELECTION GRIDS */
         .selection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 400px; }
         .selection-btn { border: 2px solid #555; background: #222; padding: 15px; cursor: pointer; text-align: center; font-size: 1.2rem; }
@@ -103,9 +107,23 @@
         .hand-card:hover { transform: scale(1.0) translateY(-10px); }
         .hand-card.used { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
 
-        /* SCOREBOARD */
-        #scoreboard { position: fixed; top: 60px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #444; border-radius: 5px; font-size: 0.8rem; display: none; }
-        @media (max-width: 800px) { #scoreboard { position: static; width: 100%; margin-bottom: 20px; display: block; } }
+        /* SCOREBOARD & INSTRUCTION */
+        #game-instruction { margin-top: 60px; margin-bottom: 20px; font-size: 1.2rem; color: #00ff00; text-align: center; min-height: 50px; width: 100%; }
+        #scoreboard { position: fixed; top: 60px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #444; border-radius: 5px; font-size: 0.8rem; display: none; z-index: 500; }
+        
+        @media (max-width: 800px) { 
+            #scoreboard { 
+                position: relative; top: auto; right: auto; width: 100%; 
+                margin-top: 70px; margin-bottom: 10px; display: block; box-sizing: border-box; 
+            } 
+            #game-instruction { margin-top: 10px; } /* Verhindert doppelten Abstand, weil Scoreboard schon puffert */
+        }
+        
+        /* HIER IST DER FIX FÜR DIE 7 KARTEN AUF MOBILE */
+        @media (max-width: 500px) {
+            .bus-path-container { gap: 4px; }
+            .bus-path-card { width: 42px !important; height: 63px !important; font-size: 0.9rem !important; border-width: 1px !important; min-width: auto !important; }
+        }
 
         /* MODAL */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; display: none; justify-content: center; align-items: center; }
@@ -133,11 +151,6 @@
         </div>
     </div>
 
-    <div id="scoreboard">
-        <strong>PUNKTE (SCHLUCKE)</strong>
-        <div id="score-list"></div>
-    </div>
-
     <div id="view-start" class="view active">
         <h1>🚌 BUSFAHRER</h1>
         <p>Das legendäre Trinkspiel.</p>
@@ -160,7 +173,13 @@
     </div>
 
     <div id="view-game" class="view">
-        <div id="game-instruction" style="margin-top: 60px; margin-bottom: 20px; font-size: 1.2rem; color: #00ff00; text-align: center; min-height: 50px;"></div>
+        
+        <div id="scoreboard">
+            <strong>PUNKTE (SCHLUCKE)</strong>
+            <div id="score-list"></div>
+        </div>
+
+        <div id="game-instruction"></div>
         
         <div id="interaction-area" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
 
@@ -288,6 +307,10 @@
                     players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", hand: [], score: 0, currentGuess: null })
                 }); return;
             }
+            
+            // Scoreboard in Lobby immer verstecken!
+            document.getElementById('scoreboard').style.display = "none";
+
             isHost = (data.hostId === currentUser.uid);
             const l = document.getElementById('lobby-players'); l.innerHTML = "";
             data.players.forEach(p => {
@@ -312,7 +335,7 @@
             
             // Scoreboard Update
             const sl = document.getElementById('score-list'); sl.innerHTML = "";
-            document.getElementById('scoreboard').style.display = "block";
+            document.getElementById('scoreboard').style.display = "block"; // Wird jetzt vom CSS positioniert
             data.players.forEach(p => sl.innerHTML += `<div>${p.name}: <span style="color:${p.score>0?'red':'#00ff00'}">${p.score}</span></div>`);
 
             // My Hand Update
@@ -327,7 +350,7 @@
                     handDiv.innerHTML += `<div class="card hand-card ${color} ${usedClass}" ${onclick}>${c.suit}${c.value}</div>`;
                 });
             } else {
-                handDiv.style.display = "none"; // Hide hands in Round 6
+                handDiv.style.display = "none"; 
             }
 
             // Host Controls
@@ -337,7 +360,7 @@
                 const btn = document.getElementById('btn-host-action');
                 if(phase < 5) btn.innerText = "KARTEN AUFDECKEN / NÄCHSTE RUNDE";
                 else if (phase === 5) btn.innerText = "NÄCHSTE PYRAMIDEN-KARTE";
-                else hostBtn.style.display = "none"; // Host hat in Phase 6 nichts mehr zu klicken
+                else hostBtn.style.display = "none"; 
             }
 
             // Phase Logic
@@ -345,7 +368,7 @@
             const area = document.getElementById('interaction-area');
             const pyrArea = document.getElementById('pyramid-area');
 
-            if(phase === 1) { // Rot oder Schwarz
+            if(phase === 1) { 
                 instr.innerText = "RUNDE 1: Rot oder Schwarz?";
                 pyrArea.style.display = "none";
                 if(!me.currentGuess) {
@@ -355,7 +378,7 @@
                     </div>`;
                 } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
             } 
-            else if(phase === 2) { // Suit
+            else if(phase === 2) { 
                 instr.innerText = "RUNDE 2: Welches Symbol?";
                 if(!me.currentGuess) {
                     area.innerHTML = `<div class="selection-grid">
@@ -366,7 +389,7 @@
                     </div>`;
                 } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
             }
-            else if(phase === 3) { // Rank
+            else if(phase === 3) { 
                 instr.innerText = "RUNDE 3: Welcher Wert?";
                 if(!me.currentGuess) {
                     const ranks = ['7','8','9','10','B','D','K','A'];
@@ -375,7 +398,7 @@
                     area.innerHTML = html + `</div>`;
                 } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
             }
-            else if(phase === 4) { // Exact
+            else if(phase === 4) { 
                 instr.innerText = "RUNDE 4: Genaue Karte (Viel Glück!)";
                 if(!me.currentGuess) {
                     const ranks = ['7','8','9','10','B','D','K','A'];
@@ -390,13 +413,12 @@
                     area.innerHTML = html + `</div>`;
                 } else { area.innerHTML = `<p>Du hast gewählt: ${me.currentGuess}</p>`; }
             }
-            else if(phase === 5) { // Pyramid
+            else if(phase === 5) { 
                 instr.innerText = "DIE PYRAMIDE";
                 area.innerHTML = "";
                 pyrArea.style.display = "flex";
                 renderPyramidBoard(data.gameState);
                 
-                // Active Card Logic
                 if(data.gameState.currentPyramidIndex >= 0) {
                     const activeCard = data.gameState.pyramid[data.gameState.currentPyramidIndex];
                     if(data.gameState.pyramidState[data.gameState.currentPyramidIndex]) {
@@ -409,7 +431,7 @@
                     }
                 }
             }
-            else if(phase === 6) { // Final Bus Ride
+            else if(phase === 6) { 
                 instr.innerText = "FINALE: DIE BUSFAHRT";
                 pyrArea.style.display = "none";
                 
@@ -421,15 +443,15 @@
                 let html = `<h3 style="margin-bottom:5px;">${bdName} fährt Bus!</h3>`;
                 html += `<p style="color:yellow; font-weight:bold; margin-top:0;">${msg}</p>`;
 
-                // Rendern der 7 Kartenslots (1 offen, 6 verdeckt)
-                html += `<div style="display:flex; gap:10px; margin: 20px 0; overflow-x:auto; width:100%; justify-content:center; padding-bottom:10px;">`;
+                // Rendern der 7 Kartenslots mit der neuen responsiven CSS Klasse
+                html += `<div class="bus-path-container">`;
                 for(let i=0; i<7; i++) {
                     if(i < path.length) {
                         const c = path[i];
                         const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
-                        html += `<div class="card ${color}" style="min-width:60px;">${c.suit}${c.value}</div>`;
+                        html += `<div class="card bus-path-card ${color}">${c.suit}${c.value}</div>`;
                     } else {
-                        html += `<div class="card card-back" style="min-width:60px;"></div>`;
+                        html += `<div class="card card-back bus-path-card"></div>`;
                     }
                 }
                 html += `</div>`;
@@ -559,7 +581,6 @@
             const currentCard = gs.busPath[gs.busPath.length - 1];
             const nextCard = deck.pop();
 
-            // Helfer um den echten Kartenwert zu ermitteln
             function getVal(v) {
                 if(v==='B') return 11; if(v==='D') return 12; if(v==='K') return 13; if(v==='A') return 14;
                 return parseInt(v);
@@ -580,7 +601,6 @@
                 isCorrect = true;
             }
 
-            // Auswertung
             if (instantWin) {
                 gs.busPath.push(nextCard);
                 gs.busMsg = "EXAKT GLEICH! INSTANT WIN! 🚌💨🎉";
@@ -597,7 +617,6 @@
                     return;
                 }
             } else {
-                // Falsch geraten -> Reset & Strafschluck
                 gs.busPath = [nextCard];
                 gs.busMsg = "FALSCH! Zurück zum Start und TRINKEN! 🍺";
                 players = players.map(p => {
@@ -650,15 +669,12 @@
             else if (phase === 5) {
                 let idx = data.gameState.currentPyramidIndex + 1;
                 
-                // Übergang zu Runde 6 (Busfahren)
                 if(idx >= 15) { 
-                    // Wer hat die meisten ungenutzten Karten?
                     let playersCards = data.players.map(p => ({
                         uid: p.uid,
                         name: p.name,
                         unused: p.hand.filter(c => !c.used).length
                     }));
-                    // Absteigend sortieren
                     playersCards.sort((a,b) => b.unused - a.unused);
                     
                     const busdriverUid = playersCards[0].uid;
@@ -678,7 +694,6 @@
                     return; 
                 }
 
-                // Normaler Pyramiden-Aufdeck-Schritt
                 const newState = [...data.gameState.pyramidState];
                 newState[idx] = true;
                 
@@ -694,7 +709,6 @@
             document.getElementById('view-lobby').classList.remove('active');
             document.getElementById('view-result').classList.add('active');
             
-            // Verstecke In-Game Elemente
             document.getElementById('my-hand').style.display = "none";
             document.getElementById('scoreboard').style.display = "none";
 
@@ -702,7 +716,6 @@
             let html = `<div style="margin-bottom:20px; padding:10px; border:1px solid #444; border-radius:5px;">
                 <h3 style="text-align:center; color:#00ff00;">FAHRTENBUCH (SCHLUCKE)</h3>`;
             
-            // Absteigend nach Score sortieren (die meisten Schlucke zuerst)
             let sortedPlayers = [...data.players].sort((a,b) => b.score - a.score);
 
             sortedPlayers.forEach(p => {
@@ -721,7 +734,6 @@
             const v = ['7', '8', '9', '10', 'B', 'D', 'K', 'A']; 
             let d = [];
             for(let su of s) for(let va of v) d.push({ suit: su, value: va, used: false });
-            // Gut mischen
             for (let i = d.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [d[i], d[j]] = [d[j], d[i]];
