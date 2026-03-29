@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcade-v45'; 
+const CACHE_NAME = 'arcade-v46'; 
 
 const urlsToCache = [
   './',

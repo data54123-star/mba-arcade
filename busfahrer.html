@@ -52,15 +52,15 @@
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            width: 50px; height: 50px; 
             font-size: 1.2rem; cursor: pointer; z-index: 1900;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
+            opacity: 0.5; 
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
-            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+            transform: scale(1.1); background: #111; opacity: 1; 
         }
         .badge-count { 
             position: absolute; top: -3px; right: -3px; background: red; color: white; 
@@ -70,10 +70,10 @@
         /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
         @media (max-width: 600px) {
             #toggle-users-btn {
-                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
-                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
+                bottom: 10px; right: 10px; 
+                width: 40px; height: 40px; 
                 font-size: 1rem;
-                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+                opacity: 0.3; 
             }
             .badge-count {
                 font-size: 0.6rem; padding: 1px 4px;
@@ -250,7 +250,16 @@
                 if(snap.empty) l.innerHTML = "<p style='color:#888'>Keine Busse in Sicht.</p>";
                 snap.forEach(d => {
                     const data = d.data();
-                    l.innerHTML += `<div class="lobby-card"><div><strong>Fahrer: ${data.hostName}</strong><br><small>Passagiere: ${data.players.length}</small></div><button class="btn" style="width:auto;" onclick="joinLobby('${d.id}')">EINSTEIGEN</button></div>`;
+                    // NEU: Hinzufügen des "Löschen" Buttons analog zu Horserace
+                    l.innerHTML += `
+                        <div class="lobby-card">
+                            <div><strong>Fahrer: ${data.hostName}</strong><br><small>Passagiere: ${data.players.length}</small></div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button class="btn" style="width:auto; margin: 0;" onclick="joinLobby('${d.id}')">EINSTEIGEN</button>
+                                <button class="btn btn-danger" style="width: auto; margin: 0; padding: 10px 15px;" onclick="deleteDeadLobby('${d.id}')" title="Busfahrt absagen (Löschen)">✖</button>
+                            </div>
+                        </div>
+                    `;
                 });
             });
         }
@@ -276,6 +285,17 @@
         }
 
         window.deleteLobby = async function() { if(confirm("Busfahrt absagen?")) await deleteDoc(doc(db, "lobbies", currentLobbyId)); }
+
+        // NEU: Löschfunktion für inaktive Lobbys von außen
+        window.deleteDeadLobby = async function(id) {
+            if(confirm("Möchtest du diese verlassene Bus-Lobby wirklich aufräumen?")) {
+                try {
+                    await deleteDoc(doc(db, "lobbies", id));
+                } catch(e) {
+                    console.error("Fehler beim Löschen:", e);
+                }
+            }
+        }
 
         function renderLobby(data) {
             const me = data.players.find(p => p.uid === currentUser.uid);
@@ -569,6 +589,7 @@
         window.joinLobby = joinLobby;
         window.createNewLobby = createNewLobby;
         window.deleteLobby = deleteLobby;
+        window.deleteDeadLobby = deleteDeadLobby; // Neue Export Funktion
         window.hostStartGame = hostStartGame;
         window.submitGuess = submitGuess;
         window.hostNextAction = hostNextAction;
