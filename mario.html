@@ -52,15 +52,37 @@
         .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; }
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
+        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            padding: 15px; border-radius: 50%; width: 60px; height: 60px;
-            font-size: 1.5rem; cursor: pointer; z-index: 1900;
-            display: flex; justify-content: center; align-items: center;
+            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            font-size: 1.2rem; cursor: pointer; z-index: 1900;
+            border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
+            display: flex; justify-content: center; align-items: center; 
+            transition: all 0.3s;
+            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
         }
-        .badge-count { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 0.8rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
+        #toggle-users-btn:hover, #toggle-users-btn:active { 
+            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+        }
+        .badge-count { 
+            position: absolute; top: -3px; right: -3px; background: red; color: white; 
+            font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 1px solid white; 
+        }
 
+        /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
+        @media (max-width: 600px) {
+            #toggle-users-btn {
+                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
+                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
+                font-size: 1rem;
+                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+            }
+            .badge-count {
+                font-size: 0.6rem; padding: 1px 4px;
+            }
+        }
         /* GAME STYLES */
         .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
         
