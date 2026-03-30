@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MBA Derby Multiplayer</title>
     <style>
+        /* --- GLOBALES LAYOUT & RESET --- */
         body { 
             background-color: #000; 
             color: #fff; 
@@ -15,13 +16,14 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow-x: hidden; /* Verhindert ungewolltes horizontales Scrollen auf Mobile-Devices */
         }
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 60px 0 20px 0; font-size: 2rem; text-align: center;}
         .highlight { color: #ffff00; font-weight: bold; }
         
-        /* HOME BUTTON */
+        /* --- UI ELEMENTS --- */
+        /* Absolut positionierte Status-Buttons im Header-Bereich */
         .btn-home {
             position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
@@ -30,7 +32,6 @@
             text-decoration: none; font-size: 1rem;
         }
 
-        /* STATUS ANZEIGE */
         #status-display {
             position: absolute; top: 15px; right: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
@@ -39,7 +40,8 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
-        /* --- ACTIVE USER SIDEBAR --- */
+        /* --- ACTIVE USER SIDEBAR (Comm-Link) --- */
+        /* Off-Canvas Menü für die Anzeige aktiver Spieler */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
@@ -52,19 +54,21 @@
         .user-list-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #333; animation: fadeIn 0.3s; }
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
-        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
+        
+        /* ACTIVE USER BUTTON (STEALTH MODE) 
+           Transparenter Floating Action Button, um UI-Verdeckung auf Mobile zu minimieren */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            width: 50px; height: 50px; 
             font-size: 1.2rem; cursor: pointer; z-index: 1900;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
+            opacity: 0.5; 
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
-            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+            transform: scale(1.1); background: #111; opacity: 1; 
         }
         .badge-count { 
             position: absolute; top: -3px; right: -3px; background: red; color: white; 
@@ -74,16 +78,19 @@
         /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
         @media (max-width: 600px) {
             #toggle-users-btn {
-                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
-                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
+                bottom: 10px; right: 10px; 
+                width: 40px; height: 40px; 
                 font-size: 1rem;
-                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+                opacity: 0.3; 
             }
             .badge-count {
                 font-size: 0.6rem; padding: 1px 4px;
             }
         }
         
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- ALLGEMEINE BUTTONS --- */
         .btn { 
             background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; 
             cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px;
@@ -97,6 +104,8 @@
 
         input { background: #111; border: 1px solid #555; color: white; padding: 10px; text-align: center; font-family: inherit; }
 
+        /* --- SPA VIEWS (Single Page Application Routing) --- */
+        /* Über diese Klassen werden die verschiedenen Spielphasen ein- und ausgeblendet */
         .view { display: none; width: 95%; max-width: 100%; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
         .view.active { display: flex; }
 
@@ -112,7 +121,7 @@
         }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
 
-        /* GAME GRID */
+        /* --- GAME GRID (CSS Grid Layout) --- */
         #race-container {
             width: 100%; overflow-x: auto; padding-bottom: 20px; margin-top: 20px;
             display: flex; justify-content: flex-start;
@@ -131,6 +140,7 @@
         .cell-penalty { border-bottom: 2px solid #ff0000; }
         .cell-goal { background: repeating-linear-gradient(45deg, #222, #222 10px, #000 10px, #000 20px); border-left: 2px solid #fff; }
 
+        /* KARTEN STYLING */
         .card {
             width: 56px; height: 40px; 
             background: white; border-radius: 4px; color: black; 
@@ -144,6 +154,7 @@
         .suit-red { color: #d32f2f; }
         .suit-black { color: #000; }
 
+        /* WETT-UI */
         .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         
         .bet-option { 
@@ -163,6 +174,7 @@
             border-width: 3px;
         }
 
+        /* AKTIONSAREA (Sticky Bottom für schnelle Bedienung) */
         #action-area {
             position: sticky; bottom: 0; background: rgba(0,0,0,0.9); width: 100%; padding: 15px;
             display: flex; flex-direction: column; align-items: center; border-top: 1px solid #333; z-index: 100;
@@ -174,11 +186,12 @@
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
         /* --- GLOBAL FIXES --- */
-        /* HIER GEÄNDERT: Diese Regel steht jetzt global, also gilt sie auch im Querformat! */
+        /* Verhindert Überschneidungen mit den absolut positionierten Top-Buttons (Home/Online) */
         .race-header-fix {
             margin-top: 60px !important;
             width: 100%;
         }
+
     </style>
 </head>
 <body>
@@ -255,7 +268,7 @@
         import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // CONFIG
+        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -269,13 +282,18 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // GLOBALE STATE-VARIABLEN
         let currentUser = null;
         let currentLobbyId = null;
         let isHost = false;
         let myBetSuit = null;
         let playerName = "Gast";
 
-        // --- GLOBAL UI & PRESENCE ---
+        // --- GLOBAL UI & OFFLINE DETECTION ---
+        /**
+         * Prüft nativ den Verbindungsstatus und warnt den User bei Disconnect.
+         * Erfüllt PWA-Anforderung: Connectivity Independence.
+         */
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) { statusEl.innerText = "ONLINE 🟢"; statusEl.className = "status-online"; } 
@@ -285,9 +303,13 @@
         window.addEventListener('offline', updateOnlineStatus);
         updateOnlineStatus();
 
-        // --- PRESENCE SYSTEM ---
+        // --- PRESENCE SYSTEM (Heartbeat) ---
         window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
 
+        /**
+         * Schreibt periodisch einen Timestamp in die Datenbank, um Anwesenheit zu signalisieren.
+         * Verwaiste Sessions werden durch Timeout (>120s) gefiltert.
+         */
         function startPresenceSystem(userEmail, userName) {
             const updateHeartbeat = async () => {
                 const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
@@ -322,6 +344,7 @@
             });
         }
 
+        // Firebase Authentication Listener
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
@@ -334,6 +357,9 @@
         });
 
         // --- LOBBY LOGIC ---
+        /**
+         * Echtzeit-Synchronisation der verfügbaren Lobbys.
+         */
         function loadLobbies() {
             const q = query(collection(db, "lobbies"), where("status", "==", "waiting"));
             onSnapshot(q, (snapshot) => {
@@ -389,14 +415,14 @@
 
         window.deleteDeadLobby = async function(id) {
             if(confirm("Möchtest du diese verlassene Lobby wirklich aufräumen?")) {
-                try {
-                    await deleteDoc(doc(db, "lobbies", id));
-                } catch(e) {
-                    console.error("Fehler beim Löschen:", e);
-                }
+                try { await deleteDoc(doc(db, "lobbies", id)); } 
+                catch(e) { console.error("Fehler beim Löschen:", e); }
             }
         }
 
+        /**
+         * Steuert die UI basierend auf dem zentralen State in Firestore (SPA-Routing).
+         */
         function renderLobbyRoom(data) {
             const me = data.players.find(p => p.name === playerName); 
             if(!me) {
@@ -440,6 +466,7 @@
 
             if(me.ready) document.getElementById('betting-controls').style.display = 'none';
 
+            // Zentralisiertes View-Routing je nach Game-State
             if(data.status === 'racing') startGameClient(data);
             if(data.status === 'finished') showResults(data);
         }
@@ -459,6 +486,7 @@
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = snap.docs[0].data();
             
+            // State-Mutation des Player-Arrays
             const newPlayers = data.players.map(p => {
                 if(p.name === playerName) return { ...p, betAmount: amount, betSuit: myBetSuit, ready: true };
                 return p;
@@ -467,6 +495,9 @@
         }
 
         // --- GAME LOGIC ---
+        /**
+         * Initialisiert das Rennen (Aufbau des Decks und der Strafkarten)
+         */
         window.hostStartGame = async function() {
             const deck = createDeck();
             const penaltyCards = deck.splice(0, 7); 
@@ -487,6 +518,9 @@
             });
         }
 
+        /**
+         * Verarbeitet den Haupt-Game-Loop pro Klick (Serverseitige State-Mutation).
+         */
         window.hostDrawCard = async function() {
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
             const data = snap.docs[0].data();
@@ -497,32 +531,36 @@
             const card = gs.deck.pop();
             gs.lastDrawnCard = card;
 
+            // Pferd vorrücken
             if(!gs.finishedOrder.includes(card.suit)) {
                 gs.positions[card.suit]++;
             }
 
+            // Ziel erreicht (Feld 8)
             if(gs.positions[card.suit] >= 8 && !gs.finishedOrder.includes(card.suit)) {
                 gs.finishedOrder.push(card.suit);
                 gs.positions[card.suit] = 8; 
             }
 
+            // Strafkarten-Logik: Aufdecken, wenn das langsamste Pferd die Reihe passiert
             const minPos = Math.min(gs.positions['♦'], gs.positions['♥'], gs.positions['♠'], gs.positions['♣']);
             for(let i=0; i<7; i++) {
                 if(minPos >= (i+1) && !gs.penaltyRevealed[i]) {
                     gs.penaltyRevealed[i] = true;
                     const pCard = gs.penaltyCards[i];
                     if(!gs.finishedOrder.includes(pCard.suit)) {
-                        gs.positions[pCard.suit]--;
+                        gs.positions[pCard.suit]--; // Pferd muss zurück!
                     }
                 }
             }
 
+            // Spielende, wenn 3 von 4 Pferden im Ziel sind
             if(gs.finishedOrder.length === 3) {
                 const allSuits = ['♦', '♥', '♠', '♣'];
                 const loser = allSuits.find(s => !gs.finishedOrder.includes(s));
                 gs.finishedOrder.push(loser);
                 
-                // Wir übergeben das GESTARTETE finishedOrder-Array zur finalen Speicherung!
+                // Explizite Speicherung des Final-Arrays, um Race-Conditions zu vermeiden
                 calculateResults(data.players, gs.finishedOrder); 
                 return; 
             }
@@ -542,10 +580,14 @@
             renderLastCard(data.gameState.lastDrawnCard);
         }
 
+        /**
+         * Baut das dynamische CSS-Grid für die Rennstrecke auf.
+         */
         function renderGrid(gs) {
             const container = document.getElementById('grid-target');
             container.innerHTML = "";
             
+            // Linke Strafkarten-Spalte rendern
             container.innerHTML += `<div class="cell"></div>`;
             for(let i=0; i<7; i++) {
                 let content = `<div class="card card-back"></div>`;
@@ -558,6 +600,7 @@
             }
             container.innerHTML += `<div class="cell"></div>`;
 
+            // Bahnen der 4 Pferde rendern
             const suits = ['♦', '♥', '♠', '♣'];
             suits.forEach(suit => {
                 const pos = gs.positions[suit];
@@ -577,6 +620,7 @@
             div.innerHTML = `<div class="card last-card-anim ${color}">${card.suit}${card.value}</div><div style="font-weight:bold; margin-top:5px;">${card.suit} zieht!</div>`;
         }
 
+        // Berechnet Payouts basierend auf den Wetteinsätzen
         async function calculateResults(players, finishedOrder) {
             const updatedPlayers = players.map(p => {
                 const rank = finishedOrder.indexOf(p.betSuit); 
@@ -590,8 +634,6 @@
                 return { ...p, payout: profit, resultText: txt };
             });
             
-            // HIER GEÄNDERT: Wir übergeben das Array "finishedOrder" explizit an die Datenbank,
-            // damit die Plätze 3 und 4 für immer sauber abgespeichert werden!
             await updateDoc(doc(db, "lobbies", currentLobbyId), { 
                 players: updatedPlayers, 
                 status: 'finished',
@@ -604,8 +646,8 @@
             document.getElementById('view-result').classList.add('active');
             const list = document.getElementById('result-list');
             
-            // SICHERHEITS-FALLBACK: Falls die Datenbank aus irgendeinem Grund
-            // doch noch unvollständig geladen wurde, füllen wir auf.
+            // Sicherheits-Fallback: Verhindert "undefined" Rendering, falls das Array 
+            // durch Netzwerk-Lags unvollständig geschrieben wurde.
             let o = data.gameState.finishedOrder || [];
             const allSuits = ['♦', '♥', '♠', '♣'];
             const missing = allSuits.filter(suit => !o.includes(suit));
@@ -627,6 +669,7 @@
             list.innerHTML = html;
         }
 
+        // Helfer-Funktion: Skat-Deck generieren und per Fisher-Yates-Algorithmus mischen
         function createDeck() {
             const suits = ['♦', '♥', '♠', '♣'];
             const values = ['7', '8', '9', '10', 'B', 'D', 'K', 'A']; 
@@ -639,7 +682,7 @@
             return d;
         }
         
-        // Expose functions to window
+        // EXPORTS: Zwingend erforderlich für ES6 Modules, um Funktionen im HTML-DOM (onclick) nutzbar zu machen.
         window.joinLobby = joinLobby;
         window.createNewLobby = createNewLobby;
         window.selectBet = selectBet;

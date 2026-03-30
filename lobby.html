@@ -3,11 +3,14 @@
 <head>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕹️</text></svg>">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arcade Lobby</title>
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
+    
     <style>
+        /* --- GLOBALES LAYOUT & RESET --- */
         body { 
             background-color: #111; 
             color: #fff; 
@@ -23,29 +26,28 @@
         }
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
-        /* --- MOBILE FIX FÜR ÜBERSCHRIFT --- */
+        
+        /* Mobile-First: Media-Query für optimierte Darstellung der Überschrift auf kleinen Screens */
         @media (max-width: 600px) {
-            h1 {
-                margin-top: 60px; /* Schiebt die Überschrift unter den Online-Badge */
-            }
+            h1 { margin-top: 60px; }
         }
         
-        /* --- STATUS ANZEIGE (JETZT LINKS) --- */
+        /* --- PWA ONLINE-STATUS ANZEIGE --- */
         #status-display {
             position: absolute; 
             top: 15px; 
-            left: 15px; /* HIER GEÄNDERT: Von rechts nach links */
+            left: 15px; 
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
             z-index: 900; border: 1px solid #333; transition: all 0.3s;
         }
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- ACTIVE USER SIDEBAR (GEFIXT) --- */
+        /* --- ACTIVE USER SIDEBAR (Off-Canvas Menü) --- */
         #user-sidebar {
             position: fixed; 
             top: 0; 
-            right: -300px; /* HIER GEÄNDERT: Weiter rausgeschoben (-300px statt -260px) */
+            right: -300px; 
             width: 250px; 
             height: 100vh;
             background: rgba(0, 0, 0, 0.95);
@@ -54,13 +56,11 @@
             transition: right 0.3s ease-in-out;
             padding: 20px;
             overflow-y: auto;
-            /* Schatten im geschlossenen Zustand entfernt, damit kein grüner Streifen zu sehen ist */
             box-shadow: none; 
         }
         
         #user-sidebar.open { 
             right: 0; 
-            /* Schatten erst aktivieren, wenn offen */
             box-shadow: -5px 0 20px rgba(0, 255, 0, 0.2);
         }
 
@@ -83,39 +83,40 @@
             box-shadow: 0 0 5px #00ff00;
         }
 
-        /* FLOATING BUTTON */
-        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
+        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- 
+           UX-Entscheidung: Der Button wird transparent dargestellt, um das UI-Cluttering 
+           auf mobilen Endgeräten zu reduzieren. */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            width: 50px; height: 50px; 
             font-size: 1.2rem; cursor: pointer; z-index: 1900;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
+            opacity: 0.5; 
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
-            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+            transform: scale(1.1); background: #111; opacity: 1; 
         }
         .badge-count { 
             position: absolute; top: -3px; right: -3px; background: red; color: white; 
             font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 1px solid white; 
         }
 
-        /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
         @media (max-width: 600px) {
             #toggle-users-btn {
-                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
-                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
+                bottom: 10px; right: 10px; 
+                width: 40px; height: 40px; 
                 font-size: 1rem;
-                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+                opacity: 0.3; 
             }
             .badge-count {
                 font-size: 0.6rem; padding: 1px 4px;
             }
         }
-        /* --- LIVE LOCATION TICKER --- */
+
+        /* --- LIVE LOCATION TICKER (Geolocation Feature) --- */
         .location-box {
             width: 100%; max-width: 500px; margin-bottom: 20px; margin-top: 30px;
             border: 1px solid #333; background: #000; padding: 10px; border-radius: 5px;
@@ -145,7 +146,7 @@
             box-shadow: 0 0 15px rgba(0,255,0,0.3);
         }
 
-        /* --- GRID SYSTEM --- */
+        /* --- CSS GRID SYSTEM (Spiele-Auswahl) --- */
         .view-section { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
         .active { display: flex; }
 
@@ -159,14 +160,16 @@
         .game-card:hover { transform: translateY(-5px); border-color: #00ff00; box-shadow: 0 5px 15px rgba(0,255,0,0.1); }
         .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; margin-bottom: 10px; }
         .game-desc { color: #aaa; font-size: 0.9rem; }
+        /* Media Query für Grid: 2 Spalten auf Tablets/Desktops */
         @media (min-width: 768px) { .game-card { grid-column: span 6; } }
 
+        /* Interaktions-Buttons */
         .btn-container { grid-column: span 12; display: flex; flex-direction: column; align-items: center; margin-top: 20px; width: 100%; }
         .btn-action { margin-top: 15px; width: 100%; max-width: 300px; padding: 12px; background: #333; color: white; border: 1px solid #888; cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.2s; }
         .btn-action:hover { background: #444; border-color: #fff; }
         .btn-logout { margin-top: 30px; background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 10px 20px; cursor: pointer; font-family: inherit; border-radius: 5px; }
         
-        /* --- PROFIL EDIT STYLE --- */
+        /* --- PROFIL BEARBEITEN (SPA View) --- */
         .profile-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
         .avatar-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
         .avatar-option { width: 60px; height: 60px; border: 2px solid #333; cursor: pointer; opacity: 0.6; transition: all 0.2s; object-fit: cover; }
@@ -271,7 +274,7 @@
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // FIREBASE CONFIG
+        // FIREBASE INITIALISIERUNG
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -285,7 +288,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app); 
 
-        // --- GLOBAL UI STUFF ---
+        // --- PWA OFFLINE DETECTION ---
+        /**
+         * Prüft kontinuierlich den Verbindungsstatus über die Browser-API (navigator).
+         */
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) {
@@ -302,29 +308,30 @@
             document.getElementById('user-sidebar').classList.toggle('open');
         }
 
-        // --- PRESENCE SYSTEM (ACTIVE USERS) ---
+        // --- PRESENCE SYSTEM (HEARTBEAT) ---
+        /**
+         * 1. Schreibt periodisch einen Zeitstempel in Firestore (Heartbeat).
+         * 2. Hört asynchron auf Firestore-Updates, um eine Live-Liste aktiver User zu rendern.
+         */
         function startPresenceSystem(userEmail, userName) {
-            // 1. Initiales Update + Intervall alle 30 Sek
             const updateHeartbeat = async () => {
                 const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
-                // Wir speichern unter "online_status" -> ID ist die Email
                 await setDoc(doc(db, "online_status", userEmail), {
                     name: userName,
                     avatar: currentAvatar,
-                    last_seen: new Date().getTime() // Zeitstempel als Zahl
+                    last_seen: new Date().getTime() 
                 });
             };
 
             updateHeartbeat();
-            setInterval(updateHeartbeat, 30000); // Alle 30 Sek
+            setInterval(updateHeartbeat, 30000); // 30-Sekunden Intervall
 
-            // 2. Liste Laden (Nur User anzeigen, die in den letzten 2 Min da waren)
             const q = query(collection(db, "online_status"));
             onSnapshot(q, (snapshot) => {
                 const listContainer = document.getElementById('user-list-container');
                 const badge = document.getElementById('active-user-count');
                 const now = new Date().getTime();
-                const timeout = 2 * 60 * 1000; // 2 Minuten Timeout
+                const timeout = 2 * 60 * 1000; // Filtert User heraus, die länger als 2 Min nicht geupdatet haben
 
                 let activeUsers = [];
                 snapshot.forEach(doc => {
@@ -334,11 +341,9 @@
                     }
                 });
 
-                // Sortieren nach Name
                 activeUsers.sort((a,b) => a.name.localeCompare(b.name));
-
-                // Rendern
                 badge.innerText = activeUsers.length;
+                
                 if(activeUsers.length === 0) {
                     listContainer.innerHTML = '<div style="color:#666; padding:10px;">Keine aktiven Signale.</div>';
                     return;
@@ -346,7 +351,6 @@
 
                 let html = "";
                 activeUsers.forEach(u => {
-                    // Ist es der eigene User?
                     const isMe = (u.name === userName);
                     const style = isMe ? "border-color:#00ff00; background: #002200;" : "";
                     
@@ -365,19 +369,28 @@
         }
 
 
-        // --- AVATAR LOGIK ---
+        // --- PROFIL-MANAGEMENT (LocalStorage) ---
         const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
+        
+        /**
+         * Lädt den Avatar des Nutzers asynchron aus dem LocalStorage (Browser-Speicher),
+         * um unnötige Datenbankaufrufe zu vermeiden.
+         */
         function initProfile() {
             const container = document.getElementById('avatar-container');
             const currentImg = document.getElementById('current-user-avatar');
             const savedAvatar = localStorage.getItem('mba_avatar') || myAvatars[0];
+            
             currentImg.src = savedAvatar; 
             container.innerHTML = "";
+            
             myAvatars.forEach(filename => {
                 const img = document.createElement('img');
                 img.src = filename;
                 img.className = 'avatar-option';
                 if(filename === savedAvatar) img.classList.add('selected');
+                
+                // Click-Handler zur Avatar-Auswahl (State Update in DOM & LocalStorage)
                 img.onclick = function() {
                     document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
                     img.classList.add('selected');
@@ -388,10 +401,11 @@
             });
         }
 
-        // --- PASSWORD CHANGE ---
+        // --- FIREBASE AUTHENTICATION API ---
         window.changeUserPassword = function() {
             const newPw = document.getElementById('new-password').value;
             const user = auth.currentUser;
+            
             if (newPw.length < 6) { alert("Min 6 Zeichen!"); return; }
             if (user) {
                 updatePassword(user, newPw).then(() => {
@@ -403,6 +417,9 @@
             }
         }
 
+        /**
+         * SPA-Routing: Toggelt aktive CSS-Klassen, um Views auszutauschen.
+         */
         window.switchView = function(viewName) {
             document.getElementById('view-dashboard').classList.remove('active');
             document.getElementById('view-profile').classList.remove('active');
@@ -410,70 +427,88 @@
             if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
         }
 
-        // --- AUTH & INIT ---
+        // --- AUTH-STATE LISTENER & INITIALISIERUNG ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                // Name aus der fiktiven E-Mail extrahieren
                 const name = user.email.replace("@mba-arcade.com", ""); 
                 document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
                 
                 initProfile();
                 initLocationBoard();
-                
-                // START PRESENCE (Das neue Feature!)
                 startPresenceSystem(user.email, name);
 
+                // Geofencing Routing: Trennung zwischen Zielperson (Admin) und Teilnehmern (Spys)
                 if (user.email === ADMIN_EMAIL) {
                     initAdminWatch(user.email);
                 } else {
                     initSpySystem(name, user.email);
                 }
             } else {
-                window.location.href = "index.html";
+                window.location.href = "index.html"; // Redirect bei unautorisiertem Zugriff
             }
         });
 
         window.logout = function() { signOut(auth).then(() => window.location.href = "index.html"); }
         
-        // --- JGA SYSTEM ---
+        // --- HARDWARE API: GEOFENCING SYSTEM (JGA USE CASE) ---
         const ADMIN_EMAIL = "benedikt@mba-arcade.com"; 
-        const TARGET_LAT = 49.473972; 
+        const TARGET_LAT = 49.473972;  // Zielkoordinaten (Würzburg)
         const TARGET_LON = 8.534397;
-        const ALARM_RADIUS_KM = 5;
+        const ALARM_RADIUS_KM = 5;     // Schwellenwert für Alarmierung
 
+        /**
+         * Abonniert Echtzeit-Updates aller öffentlichen Standorte (Grob-Lokalisierung)
+         */
         function initLocationBoard() {
             const q = query(collection(db, "public_locations")); 
             onSnapshot(q, (snap) => {
                 const list = document.getElementById('location-list');
                 const count = document.getElementById('loc-count');
                 if(snap.empty) { list.innerHTML = '<span style="color:#666;">Keine Signale.</span>'; count.innerText = "0"; return; }
+                
                 let html = ""; let c = 0;
                 snap.forEach(doc => { const d = doc.data(); html += `<div class="loc-chip">📍 ${d.city}, ${d.country}</div>`; c++; });
                 list.innerHTML = html; count.innerText = c;
             });
         }
 
+        /**
+         * Greift auf das GPS-Modul des Endgeräts zu (navigator.geolocation).
+         * 1. Berechnet die Distanz zum Ziel.
+         * 2. Nutzt die OpenStreetMap API (Reverse Geocoding), um Koordinaten in Städtenamen zu wandeln.
+         */
         function initSpySystem(name, userEmail) {
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                    
                     if (userEmail !== ADMIN_EMAIL) {
                         const dist = calculateDistance(TARGET_LAT, TARGET_LON, lat, lon);
                         if (dist <= ALARM_RADIUS_KM) triggerSilentAlarm(userEmail, dist);
                     }
+                    
+                    // Reverse-Geocoding Request (Fetch API)
                     try {
                         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         const d = await res.json();
                         if(d && d.address) {
                             const ci = d.address.city || d.address.town || d.address.village || "Unknown";
                             const co = d.address.country_code ? d.address.country_code.toUpperCase() : "??";
+                            
+                            // Normalisierung der ID für Firestore (Keine Leer-/Sonderzeichen)
                             const id = `${ci}_${co}`.replace(/[^a-zA-Z0-9]/g, "_");
                             await setDoc(doc(db, "public_locations", id), { city: ci, country: co, last_seen: new Date() });
                         }
-                    } catch (e) {}
-                }, () => {});
+                    } catch (e) {} // Fehler lautlos fangen (Fail-Safe)
+                }, () => {}); // Fallback bei abgelehnter GPS-Freigabe
             }
         }
 
+        /**
+         * Exklusiver Listener für den Admin: Reagiert asynchron auf eingehende Alarme.
+         * Nutzt die Vibration-API des Handys zur physischen Benachrichtigung.
+         */
         function initAdminWatch(userEmail) {
             if (userEmail !== ADMIN_EMAIL) return; 
             const q = query(collection(db, "security_logs"), where("viewed", "==", false));
@@ -482,27 +517,38 @@
                     const l = snap.docs[0].data();
                     document.getElementById('admin-alarm-box').style.display = 'block';
                     document.getElementById('intruder-details').innerText = `Zielperson: ${l.intruder} (${l.distance}km)`;
+                    
+                    // Hardware API Integration (Haptic Feedback)
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
                 }
             });
         }
 
+        // Quittiert den Alarm in der Datenbank
         window.dismissAlarm = async function() {
             document.getElementById('admin-alarm-box').style.display = 'none';
             const s = await getDocs(query(collection(db, "security_logs"), where("viewed", "==", false)));
             s.forEach(async (d) => await updateDoc(doc(db, "security_logs", d.id), { viewed: true }));
         }
 
+        // Triggert den Alarm in Firestore (Mit Cooldown via LocalStorage zur Schonung der Quotas)
         async function triggerSilentAlarm(name, distance) {
             const last = localStorage.getItem('last_jga_alarm'); const now = new Date().getTime();
-            if (last && (now - last) < 3600000) return; 
-            try { await addDoc(collection(db, "security_logs"), { intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false });
+            if (last && (now - last) < 3600000) return; // Cooldown: 1 Stunde
+            try { 
+                await addDoc(collection(db, "security_logs"), { intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false });
                 localStorage.setItem('last_jga_alarm', now);
             } catch(e) {}
         }
 
+        /**
+         * Mathematischer Helper: Haversine-Formel.
+         * Berechnet die exakte Distanz (Luftlinie in Kilometern) zwischen zwei Geokoordinaten 
+         * unter Berücksichtigung der Erdkrümmung.
+         */
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; const dLat = (lat2-lat1)*(Math.PI/180); const dLon = (lon2-lon1)*(Math.PI/180);
+            const R = 6371; // Erdradius in KM
+            const dLat = (lat2-lat1)*(Math.PI/180); const dLon = (lon2-lon1)*(Math.PI/180);
             const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*(Math.PI/180))*Math.cos(lat2*(Math.PI/180))*Math.sin(dLon/2)*Math.sin(dLon/2); 
             return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
         }

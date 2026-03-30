@@ -3,9 +3,12 @@
 <head>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕹️</text></svg>">
     <meta charset="UTF-8">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Super MBA Bros</title>
+    
     <style>
+        /* --- GLOBALES LAYOUT & RESET --- */
         body { 
             background-color: #222; 
             color: #fff; 
@@ -15,10 +18,10 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            overflow-x: hidden;
+            overflow-x: hidden; /* Blockiert horizontales Wischen */
         }
 
-        /* --- NEUES DESIGN --- */
+        /* --- UI ELEMENTS --- */
         .btn-home {
             position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
@@ -35,7 +38,7 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* SIDEBAR STYLES */
+        /* --- ACTIVE USER SIDEBAR (Off-Canvas Menü) --- */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
@@ -49,7 +52,7 @@
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
         
-        /* ACTIVE USER BUTTON (STEALTH MODE) */
+        /* ACTIVE USER BUTTON (STEALTH MODE zur Optimierung der Game-UX auf Mobile) */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
@@ -58,7 +61,7 @@
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; 
+            opacity: 0.5; /* Halb-transparent, um das Sichtfeld im Spiel nicht zu blockieren */
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
             transform: scale(1.1); background: #111; opacity: 1; 
@@ -68,6 +71,7 @@
             font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 1px solid white; 
         }
 
+        /* Mobile Anpassungen für den Sidebar-Button */
         @media (max-width: 600px) {
             #toggle-users-btn {
                 bottom: 10px; right: 10px; 
@@ -78,7 +82,7 @@
             .badge-count { font-size: 0.6rem; padding: 1px 4px; }
         }
 
-        /* GAME STYLES */
+        /* --- GAME STYLES & CANVAS --- */
         .main-layout { display: flex; flex-direction: column; align-items: center; margin-top: 80px; width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
         
         canvas { 
@@ -87,23 +91,27 @@
             background: #5c94fc; 
             max-width: 100%; 
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
-            image-rendering: pixelated; 
-            touch-action: none; 
+            image-rendering: pixelated; /* Erhält den Retro-8-Bit-Look ohne Unschärfe beim Skalieren */
+            touch-action: none; /* WICHTIG FÜR MOBILE-UX: Verhindert, dass Gesten auf dem Canvas (Taps) die Seite scrollen */
         }
         
+        /* Highscore Tabelle */
         .highscore-box { width: 100%; margin-top: 20px; border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; }
         table { border-collapse: collapse; width: 100%; color: white; }
         th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; }
         .highlight { color: #00ff00; font-weight: bold; }
+        
+        /* SPA-Hilfsklasse zum Ein-/Ausblenden der Views */
         .hidden { display: none !important; }
 
+        /* On-Screen Controller für Mobile-Gamer */
         #jump-btn { display: none; margin-top: 20px; width: 100%; padding: 20px; background: #ff4444; border: 2px solid white; color: white; font-size: 1.5rem; font-weight: bold; border-radius: 10px; touch-action: none; }
 
         @media (max-width: 600px) {
             #home-btn { top: 60px !important; left: 15px !important; }
             h1 { margin-top: 100px; }
-            #jump-btn { display: block; }
+            #jump-btn { display: block; } /* Aktiviert On-Screen Button auf Smartphones */
         }
     </style>
 </head>
@@ -120,6 +128,7 @@
     </div>
 
     <div class="main-layout">
+        
         <div id="start-screen" style="text-align: center;">
             <h1 style="color: #ff0000; font-size: 3rem; text-shadow: 4px 4px 0px #000; margin: 0; font-family: Impact, sans-serif; letter-spacing: 2px;">SUPER MBA BROS</h1>
             <div style="background: #e52521; color: white; display: inline-block; padding: 5px 15px; font-weight: bold; transform: rotate(-3deg); border: 2px solid white; margin-bottom: 20px;">RUNNER EDITION</div>
@@ -148,10 +157,12 @@
     </div>
 
     <script type="module">
+        // Import der Firebase-Instanzen (Auth & Firestore)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -165,10 +176,15 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // GLOBALE ZUSTANDS-VARIABLEN
         let playerName = "Gast";
         let gameIsRunning = false;
 
-        // --- PRESENCE & UI ---
+        // --- PRESENCE SYSTEM & OFFLINE DETECTION ---
+        /**
+         * PWA Offline-Erkennung: Blockiert Aktionen (wie Highscore-Uploads), wenn der
+         * Navigator eine fehlende Netzwerkverbindung meldet.
+         */
         function updateOnlineStatus() {
             const el = document.getElementById('status-display');
             if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; loadLeaderboard(); }
@@ -180,6 +196,9 @@
 
         window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
 
+        /**
+         * Heartbeat-System zur Erfassung der aktiven Nutzer im Comm-Link
+         */
         function startPresenceSystem(userEmail, userName) {
             const updateHeartbeat = async () => {
                 const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
@@ -205,6 +224,7 @@
             });
         }
 
+        // Initiiert das Profil nach erfolgreicher Authentifizierung
         onAuthStateChanged(auth, (user) => {
             if(user) {
                 playerName = user.email.replace("@mba-arcade.com", "");
@@ -217,7 +237,7 @@
             }
         });
 
-        // --- GAME ENGINE ---
+        // --- HTML5 CANVAS GAME ENGINE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
@@ -225,20 +245,22 @@
         let score = 0;
         let gameLoop;
         let speed = 5;
-        let walkCycle = 0;
+        let walkCycle = 0; // Für die einfache Lauf-Animation
 
-        // ENTITIES
+        // ENTITIES (Spielobjekte)
+        // Mario Objekt mit grundlegender Physik-Deklaration (Position, Velocity, Jump-Power)
         const mario = { x: 50, y: 200, width: 30, height: 30, dy: 0, jumpPower: -13, grounded: false };
         const groundHeight = 50;
         let obstacles = [];
         let clouds = [];
 
         function startGame() {
+            // SPA-Logik: Wechsel vom Startbildschirm zum Canvas-Renderer
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-view').classList.remove('hidden');
             gameIsRunning = true;
             resetGame();
-            loop();
+            loop(); // Startet den Event-Loop
         }
 
         function resetGame() {
@@ -249,8 +271,13 @@
             clouds = [{x: 100, y: 50}, {x: 400, y: 80}, {x: 700, y: 40}];
         }
 
+        /**
+         * Interaktions-Logik: Löst den Sprung aus.
+         * WICHTIG: Das übergebene Event 'e' erlaubt e.preventDefault(), wodurch das 
+         * standardmäßige Scrollen der Webseite bei der Betätigung der Leertaste unterdrückt wird.
+         */
         function userJump(e) {
-            if(e) e.preventDefault(); // Verhindert das Scrollen, WENN das Event übergeben wird!
+            if(e) e.preventDefault(); 
             if(mario.grounded) {
                 mario.dy = mario.jumpPower;
                 mario.grounded = false;
@@ -258,43 +285,54 @@
         }
         window.userJump = userJump; 
         
-        // HIER GEÄNDERT: Das "e" wird nun in der Funktion an userJump(e) übergeben!
+        // Listener für Desktop-Spieler (Leertaste)
         document.addEventListener('keydown', (e) => { 
             if(e.code === 'Space') {
                 userJump(e); 
             }
         });
 
+        /**
+         * Core Game Loop: 
+         * Wird durch requestAnimationFrame synchronisiert, um exakt mit der 
+         * Bildwiederholrate des Monitors (idR. 60 FPS) zu feuern.
+         */
         function loop() {
             if(!gameIsRunning) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Frame zurücksetzen
             frame++;
+            
+            // Simpler Sprite-Animator für die Beine
             if(frame % 10 === 0) walkCycle = (walkCycle + 1) % 2; 
 
-            // BACKGROUND
             drawClouds();
 
-            // PHYSICS
-            mario.dy += 0.7; 
-            mario.y += mario.dy;
+            // --- PHYSIK-ENGINE (Schwerkraft-Kalkulation) ---
+            mario.dy += 0.7; // Gravitation zieht nach unten (dy erhöht sich)
+            mario.y += mario.dy; // Anwendung der Velocity auf die Y-Koordinate
 
+            // Kollision mit dem Boden
             if (mario.y + mario.height > canvas.height - groundHeight) {
                 mario.y = canvas.height - groundHeight - mario.height;
                 mario.dy = 0;
                 mario.grounded = true;
             }
 
-            // OBSTACLE LOGIC
+            // --- HINDERNIS (PIPES) GENERIERUNG ---
+            // Spawn-Rate basierend auf einem Zufalls-Frame-Intervall
             if (frame % Math.floor(Math.random() * 50 + 100) === 0) {
                 let height = Math.random() > 0.5 ? 40 : 60; 
                 obstacles.push({ x: canvas.width, y: canvas.height - groundHeight - height, width: 40, height: height, passed: false });
             }
 
+            // Array iterieren und Hindernisse bewegen
             for (let i = 0; i < obstacles.length; i++) {
                 let obs = obstacles[i];
-                obs.x -= speed;
+                obs.x -= speed; // Bewegung nach Links (Gaukeln dem Spieler Bewegung nach rechts vor)
                 drawPipe(obs.x, obs.y, obs.width, obs.height);
 
+                // Axis-Aligned Bounding Box (AABB) Kollisionserkennung
+                // Prüft auf Überschneidung der X- und Y-Koordinaten der beiden Rechtecke (Mario & Rohr)
                 if (mario.x + 5 < obs.x + obs.width &&
                     mario.x + mario.width - 5 > obs.x &&
                     mario.y + 5 < obs.y + obs.height &&
@@ -302,6 +340,7 @@
                     gameOver();
                 }
 
+                // Speichermanagement: Objekte löschen, die den Bildschirmrand verlassen haben
                 if (obs.x + obs.width < 0) {
                     obstacles.shift();
                     i--;
@@ -311,16 +350,18 @@
             drawGround();
             drawMario(mario.x, mario.y);
 
-            // SCORE
+            // Dynamische Schwierigkeit (Pace-Kurve) und Score
             score = Math.floor(frame / 5);
             document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
             
+            // Geschwindigkeit erhöht sich alle 500 Frames leicht
             if(frame % 500 === 0) speed += 0.5;
 
             gameLoop = requestAnimationFrame(loop);
         }
 
-        // --- DRAWING FUNCTIONS ---
+        // --- DRAWING FUNCTIONS (Canvas 2D API) ---
+        // Rekonstruktion von 8-Bit Grafiken durch simple Rechteck-Strukturen (fillRect)
         function drawMario(x, y) {
             ctx.fillStyle = '#ff0000'; ctx.fillRect(x + 5, y + 10, 20, 10);
             ctx.fillStyle = '#0000aa'; ctx.fillRect(x + 8, y + 20, 14, 8);
@@ -339,6 +380,7 @@
             ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(x + 5, y + 2, 4, h - 2);
         }
 
+        // Parallax-Scrolling Simulation für den Boden
         function drawGround() {
             ctx.fillStyle = '#c84c0c'; ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
             ctx.fillStyle = '#000'; 
@@ -354,12 +396,16 @@
         function drawClouds() {
             ctx.fillStyle = 'white';
             clouds.forEach(c => {
-                c.x -= speed * 0.2; 
+                c.x -= speed * 0.2; // Wolken bewegen sich langsamer als Hindernisse (Tiefeneffekt)
                 if(c.x < -100) c.x = canvas.width + 50;
                 ctx.beginPath(); ctx.arc(c.x, c.y, 20, 0, Math.PI * 2); ctx.arc(c.x + 25, c.y - 10, 25, 0, Math.PI * 2); ctx.arc(c.x + 50, c.y, 20, 0, Math.PI * 2); ctx.fill();
             });
         }
 
+        /**
+         * Bricht den Loop ab, rendert den Game Over Screen ins Canvas 
+         * und stößt den asynchronen Speichervorgang für Firebase an.
+         */
         function gameOver() {
             gameIsRunning = false;
             cancelAnimationFrame(gameLoop);
@@ -368,6 +414,8 @@
             ctx.fillStyle = "white"; ctx.font = "30px Courier New"; ctx.fillText("GAME OVER", canvas.width/2 - 80, canvas.height/2);
             
             saveScore(score);
+            
+            // Leichte Verzögerung für flüssigere UX
             setTimeout(() => {
                 alert("Game Over! Score: " + score);
                 document.getElementById('start-screen').classList.remove('hidden');
@@ -375,8 +423,13 @@
             }, 100);
         }
 
-        // --- HIGHSCORE LOGIC ---
+        // --- HIGHSCORE DATENBANK LOGIK ---
+        /**
+         * Asynchrone Abfrage des Leaderboards aus Firestore.
+         * Beinhaltet serverseitige Filterung (orderBy, limit) zur Performance-Optimierung.
+         */
         async function loadLeaderboard() {
+            // PWA Fallback: Wenn offline, brechen wir direkt ab, um Netz-Fehler zu vermeiden
             if (!navigator.onLine) return;
             const tbody = document.getElementById('leaderboard-body');
             try {
@@ -394,6 +447,9 @@
             } catch(e){console.error(e);}
         }
 
+        /**
+         * Speichert den finalen Score in Firestore und lädt die Ansicht neu.
+         */
         async function saveScore(p) {
             if(!navigator.onLine) return;
             try {

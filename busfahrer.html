@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MBA Busfahrer</title>
     <style>
+        /* GLOBALES LAYOUT & RESET */
         body { 
             background-color: #000; 
             color: #fff; 
@@ -15,13 +16,13 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow-x: hidden; /* Verhindert horizontales Scrollen auf Mobile */
         }
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin: 60px 0 20px 0; font-size: 2rem; text-align: center;}
         .highlight { color: #ffff00; font-weight: bold; }
         
-        /* UI ELEMENTS */
+        /* UI ELEMENTS: Absolut positionierte Status-Buttons */
         .btn-home {
             position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
@@ -36,7 +37,7 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
-        /* SIDEBAR */
+        /* SIDEBAR (Comm-Link für anwesende Spieler) */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; 
@@ -49,7 +50,7 @@
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
         
-        /* ACTIVE USER BUTTON (STEALTH MODE) */
+        /* ACTIVE USER BUTTON (STEALTH MODE für bessere Mobile UX) */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
@@ -65,27 +66,29 @@
             .badge-count { font-size: 0.6rem; padding: 1px 4px; }
         }
 
-        /* BUTTONS */
+        /* ALLGEMEINE BUTTONS */
         .btn { background: #222; border: 1px solid #00ff00; color: #fff; padding: 10px 20px; cursor: pointer; font-family: inherit; font-weight: bold; margin: 5px; width: 100%; max-width: 300px; transition: all 0.2s; }
         .btn:hover { background: #00ff00; color: #000; }
         .btn:disabled { border-color: #555; color: #555; background: #111; cursor: not-allowed; }
         .btn-danger { border-color: #ff4444; color: #ff4444; margin-top: 10px; }
         .btn-danger:hover { background: #ff4444; color: #fff; }
 
-        /* GAME CONTAINERS */
+        /* SPA VIEWS (Single Page Application Ansatz) */
         .view { display: none; width: 95%; max-width: 1000px; flex-direction: column; align-items: center; padding: 10px; box-sizing: border-box; }
         .view.active { display: flex; }
+        
+        /* LOBBY & PLAYER LISTS */
         .lobby-card { background: #111; border: 1px solid #444; padding: 15px; margin: 10px auto; width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; }
         .player-list { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin: 20px 0; }
         .player-chip { background: #222; border: 1px solid #444; padding: 10px; text-align: center; border-radius: 5px; display: flex; flex-direction: column; align-items: center; position: relative; }
         .player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff00; margin-bottom: 5px; }
         
-        /* CARDS */
+        /* SPIELKARTEN STYLING */
         .card { width: 60px; height: 90px; background: white; border-radius: 5px; color: black; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); user-select: none; position: relative; border: 2px solid white; flex-shrink: 0;}
         .card-back { background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 5px, #d32f2f 5px, #d32f2f 10px); border: 2px solid #fff; color: transparent; }
         .suit-red { color: #d32f2f; } .suit-black { color: #000; }
         
-        /* PYRAMID */
+        /* PYRAMIDEN LAYOUT */
         .pyramid-container { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; margin-top: 20px; width: 100%; overflow-x: auto; }
         .pyramid-row { display: flex; gap: 10px; justify-content: center; }
         
@@ -93,7 +96,7 @@
         .bus-path-container { display: flex; gap: 10px; margin: 20px 0; width: 100%; justify-content: center; padding-bottom: 10px; }
         .bus-path-card { width: 60px; height: 90px; }
 
-        /* SELECTION GRIDS */
+        /* AUSWAHL GRIDS (Für Runden 1-4) */
         .selection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 400px; }
         .selection-btn { border: 2px solid #555; background: #222; padding: 15px; cursor: pointer; text-align: center; font-size: 1.2rem; }
         .selection-btn:hover { background: #333; }
@@ -101,7 +104,7 @@
         .card-grid-select { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
         .card-select-item { width: 30px; height: 45px; font-size: 0.8rem; cursor: pointer; border: 1px solid #ccc; background: white; color: black; display: flex; justify-content: center; align-items: center;}
         
-        /* MY HAND */
+        /* SPIELER HAND (Fixiert am unteren Rand) */
         #my-hand { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px; display: flex; justify-content: center; gap: 5px; z-index: 100; border-top: 1px solid #333; }
         .hand-card { transform: scale(0.8); cursor: pointer; transition: transform 0.2s; }
         .hand-card:hover { transform: scale(1.0) translateY(-10px); }
@@ -111,6 +114,7 @@
         #game-instruction { margin-top: 60px; margin-bottom: 20px; font-size: 1.2rem; color: #00ff00; text-align: center; min-height: 50px; width: 100%; }
         #scoreboard { position: fixed; top: 60px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #444; border-radius: 5px; font-size: 0.8rem; display: none; z-index: 500; }
         
+        /* RESPONSIVE DESIGN FIXES FÜR MOBILE */
         @media (max-width: 800px) { 
             #scoreboard { 
                 position: relative; top: auto; right: auto; width: 100%; 
@@ -124,7 +128,7 @@
             .bus-path-card { width: 42px !important; height: 63px !important; font-size: 0.9rem !important; border-width: 1px !important; min-width: auto !important; }
         }
 
-        /* MODAL */
+        /* MODAL (Für Popups, z.B. Schlucke verteilen) */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; display: none; justify-content: center; align-items: center; }
         .modal-content { background: #222; border: 2px solid #00ff00; padding: 20px; text-align: center; max-width: 90%; }
 
@@ -148,11 +152,6 @@
             <p id="modal-msg">Wähle ein Opfer:</p>
             <div id="modal-player-list" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
         </div>
-    </div>
-
-    <div id="scoreboard">
-        <strong>PUNKTE (SCHLUCKE)</strong>
-        <div id="score-list"></div>
     </div>
 
     <div id="view-start" class="view active">
@@ -209,11 +208,12 @@
     <div id="my-hand" style="display: none;"></div>
 
     <script type="module">
+        // Import der benötigten Firebase-Module für Authentifizierung und Echtzeit-Datenbank (Firestore)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, arrayUnion, query, where, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // FIREBASE CONFIG
+        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -227,13 +227,18 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // GLOBALE STATE VARIABLEN
         let currentUser = null;
         let playerName = "Gast";
         let currentLobbyId = null;
         let isHost = false;
         let currentCardToMatch = null; 
 
-        // --- PRESENCE & UI ---
+        // --- PRESENCE & UI MANAGEMENT ---
+        /**
+         * Prüft den lokalen Verbindungsstatus des Browsers und aktualisiert die UI.
+         * PWA-Anforderung: Offline-Fähigkeit signalisieren.
+         */
         function updateOnlineStatus() {
             const el = document.getElementById('status-display');
             if(navigator.onLine){ el.innerText="ONLINE 🟢"; el.className="status-online"; }
@@ -244,17 +249,24 @@
         updateOnlineStatus();
         window.toggleSidebar = function() { document.getElementById('user-sidebar').classList.toggle('open'); }
 
+        /**
+         * Heartbeat-System: Schreibt regelmäßig einen Timestamp in Firestore.
+         * Löst zudem einen Listener aus, der alle aktiven User im Comm-Link rendert.
+         */
         function startPresenceSystem(userEmail, userName) {
             const beat = async () => { await setDoc(doc(db, "online_status", userEmail), { name: userName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", last_seen: new Date().getTime() }); };
-            beat(); setInterval(beat, 30000);
+            beat(); setInterval(beat, 30000); // Heartbeat alle 30 Sekunden
+
             onSnapshot(query(collection(db, "online_status")), (s) => {
                 const l = document.getElementById('user-list-container'); const b = document.getElementById('active-user-count'); const n = new Date().getTime(); let a = [];
+                // Filtert inaktive Nutzer heraus (Timeout > 120 Sekunden)
                 s.forEach(d => { if(n - d.data().last_seen < 120000) a.push(d.data()); }); a.sort((x,y)=>x.name.localeCompare(y.name)); b.innerText = a.length;
                 if(a.length===0){ l.innerHTML='<div style="color:#666;padding:10px;">Keine Signale.</div>'; return;}
                 let h = ""; a.forEach(u => { const st = (u.name===userName) ? "border-color:#00ff00; background:#002200;" : ""; h+=`<div class="user-list-item" style="${st}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div style="font-size:0.7rem;color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`; }); l.innerHTML = h;
             });
         }
 
+        // Auth-Listener: Startet das System erst, wenn der User validiert ist
         onAuthStateChanged(auth, u => {
             if(u) {
                 currentUser = u; playerName = u.email.replace("@mba-arcade.com", "");
@@ -263,6 +275,9 @@
         });
 
         // --- LOBBY SYSTEM ---
+        /**
+         * Echtzeit-Listener für aktive Lobbys. Zeigt nur Lobbys im Status "waiting" an.
+         */
         function loadLobbies() {
             const q = query(collection(db, "lobbies"), where("status", "==", "waiting"), where("gameType", "==", "busfahrer"));
             onSnapshot(q, (snap) => {
@@ -283,6 +298,7 @@
             });
         }
 
+        // Erstellt ein neues Dokument in Firestore mit der Initial-Struktur des Game-States
         window.createNewLobby = async function() {
             const data = {
                 hostId: currentUser.uid, hostName: playerName, status: "waiting", gameType: "busfahrer",
@@ -293,6 +309,7 @@
             joinLobby(ref.id);
         }
 
+        // Hängt sich an den Firestore-Datenstrom (onSnapshot) einer spezifischen Lobby
         window.joinLobby = function(id) {
             currentLobbyId = id;
             document.getElementById('view-start').classList.remove('active');
@@ -303,18 +320,22 @@
             });
         }
 
+        // Lobby-Verwaltung (Löschen)
         window.deleteLobby = async function() { if(confirm("Busfahrt absagen?")) await deleteDoc(doc(db, "lobbies", currentLobbyId)); }
         window.deleteDeadLobby = async function(id) { if(confirm("Verlassene Lobby wirklich aufräumen?")) { try { await deleteDoc(doc(db, "lobbies", id)); } catch(e) {} } }
 
+        /**
+         * Verwaltet die Darstellung der Spieler in der Lobby und steuert den Wechsel der Views (SPA-Logik).
+         */
         function renderLobby(data) {
             const me = data.players.find(p => p.uid === currentUser.uid);
+            // ArrayUnion verhindert Duplikate beim Beitritt
             if(!me) {
                 updateDoc(doc(db, "lobbies", currentLobbyId), {
                     players: arrayUnion({ uid: currentUser.uid, name: playerName, avatar: localStorage.getItem('mba_avatar')||"100.jpg", hand: [], score: 0, currentGuess: null })
                 }); return;
             }
             
-            // Scoreboard in Lobby immer verstecken!
             document.querySelectorAll('#scoreboard').forEach(el => el.style.display = "none");
 
             isHost = (data.hostId === currentUser.uid);
@@ -324,6 +345,7 @@
             });
             if(isHost) document.getElementById('host-controls').style.display = "block";
             
+            // View-Routing basierend auf dem Datenbank-Status
             if(data.status === "ingame") {
                 document.getElementById('view-lobby').classList.remove('active');
                 document.getElementById('view-game').classList.add('active');
@@ -334,7 +356,9 @@
         }
 
         // --- GAME LOGIC ---
-        
+        /**
+         * Hauptfunktion zum Rendern des Spiels. Reagiert auf die "Phase" (1-6) aus der Datenbank.
+         */
         function renderGame(data) {
             const phase = data.gameState.phase;
             const me = data.players.find(p => p.uid === currentUser.uid);
@@ -347,7 +371,7 @@
                 data.players.forEach(p => sl.innerHTML += `<div>${p.name}: <span style="color:${p.score>0?'red':'#00ff00'}">${p.score}</span></div>`);
             }
 
-            // My Hand Update
+            // Eigene Kartenhand rendern (Nur in Phase 1-5 sichtbar)
             const handDiv = document.getElementById('my-hand');
             handDiv.innerHTML = "";
             if (phase < 6) {
@@ -355,6 +379,7 @@
                 me.hand.forEach((c, idx) => {
                     const color = (c.suit === '♥' || c.suit === '♦') ? 'suit-red' : 'suit-black';
                     const usedClass = c.used ? 'used' : '';
+                    // Click-Handler wird nur in Phase 5 aktiv für die Pyramide
                     const onclick = (phase === 5 && !c.used) ? `onclick="attemptClaimCard('${c.suit}','${c.value}', ${idx})"` : '';
                     handDiv.innerHTML += `<div class="card hand-card ${color} ${usedClass}" ${onclick}>${c.suit}${c.value}</div>`;
                 });
@@ -362,7 +387,7 @@
                 handDiv.style.display = "none"; 
             }
 
-            // Host Controls
+            // Host Controls (Spielsteuerrung)
             const hostBtn = document.getElementById('host-game-controls');
             if(isHost) {
                 hostBtn.style.display = "block";
@@ -372,7 +397,7 @@
                 else hostBtn.style.display = "none"; 
             }
 
-            // Phase Logic
+            // --- State-Machine: UI-Aufbau je nach Spielphase ---
             const instr = document.getElementById('game-instruction');
             const area = document.getElementById('interaction-area');
             const pyrArea = document.getElementById('pyramid-area');
@@ -428,6 +453,7 @@
                 pyrArea.style.display = "flex";
                 renderPyramidBoard(data.gameState);
                 
+                // Logik für die aktuell aufgedeckte Pyramidenkarte
                 if(data.gameState.currentPyramidIndex >= 0) {
                     const activeCard = data.gameState.pyramid[data.gameState.currentPyramidIndex];
                     if(data.gameState.pyramidState[data.gameState.currentPyramidIndex]) {
@@ -453,6 +479,7 @@
                 html += `<p style="color:yellow; font-weight:bold; margin-top:0;">${msg}</p>`;
 
                 html += `<div class="bus-path-container">`;
+                // Render der 7 Slots (offene und verdeckte Karten)
                 for(let i=0; i<7; i++) {
                     if(i < path.length) {
                         const c = path[i];
@@ -464,6 +491,7 @@
                 }
                 html += `</div>`;
 
+                // Interaktions-Buttons nur für den aktiven Busfahrer
                 if(currentUser.uid === bdUid) {
                     html += `
                     <div class="selection-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 500px;">
@@ -478,6 +506,9 @@
             }
         }
 
+        /**
+         * Helfer-Funktion zum Generieren der Pyramiden-Ansicht (Phase 5)
+         */
         function renderPyramidBoard(gs) {
             const container = document.getElementById('pyramid-area');
             container.innerHTML = "";
@@ -506,6 +537,7 @@
         }
 
         // --- USER ACTIONS ---
+        // Speichert den Tipp des Spielers (Phase 1-4) in Firestore
         window.submitGuess = async function(type, val) {
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
@@ -518,6 +550,11 @@
             await updateDoc(lobbyRef, { players: newPlayers });
         }
 
+        /**
+         * RACE CONDITION HANDLING: Verarbeitet das Ablegen von Karten auf die Pyramide.
+         * Holt sich ein frisches Snapshot der DB, um sicherzustellen, dass nicht 2 Spieler 
+         * gleichzeitig die gleiche Karte claimen.
+         */
         window.attemptClaimCard = async function(s, v, handIdx) {
             if(!currentCardToMatch) return;
             if(v !== currentCardToMatch.value) { alert("Wert passt nicht!"); return; }
@@ -528,6 +565,7 @@
             const currIdx = data.gameState.currentPyramidIndex;
             const cardInDb = data.gameState.pyramid[currIdx];
 
+            // Serverseitiger Check ob jemand Millisekunden schneller war
             if(cardInDb.claimed) {
                 alert("Zu langsam! Jemand anders war schneller.");
                 return;
@@ -539,6 +577,7 @@
 
             await updateDoc(lobbyRef, { "gameState.pyramid": newPyramid });
 
+            // Punkte (Schlucke) anhand der Pyramiden-Ebene berechnen
             let points = 0;
             if(currIdx < 5) points = 1;
             else if(currIdx < 9) points = 3;
@@ -557,6 +596,7 @@
             document.getElementById('modal-overlay').style.display = "flex";
         }
 
+        // Verteilt Strafschlucke über die Datenbank an andere Spieler
         window.assignPoints = async function(targetUid, points, handIdx) {
             document.getElementById('modal-overlay').style.display = "none";
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
@@ -576,6 +616,10 @@
         }
 
         // --- BUSFAHRER RUNDE 6 LOGIK ---
+        /**
+         * Verarbeitet die Tipps (Höher, Tiefer, Gleich) des Busfahrers.
+         * Beinhaltet die "Instant Win"-Hausregel.
+         */
         window.busGuess = async function(guess) {
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
@@ -589,6 +633,7 @@
             const currentCard = gs.busPath[gs.busPath.length - 1];
             const nextCard = deck.pop();
 
+            // Transformiert Bildkarten in numerische Werte zum Vergleichen
             function getVal(v) {
                 if(v==='B') return 11; if(v==='D') return 12; if(v==='K') return 13; if(v==='A') return 14;
                 return parseInt(v);
@@ -601,8 +646,7 @@
             let instantWin = false;
 
             if (guess === 'equal' && v1 === v2) {
-                isCorrect = true;
-                instantWin = true;
+                isCorrect = true; instantWin = true;
             } else if (guess === 'higher' && v2 > v1) {
                 isCorrect = true;
             } else if (guess === 'lower' && v2 < v1) {
@@ -625,7 +669,7 @@
                     return;
                 }
             } else {
-                gs.busPath = [nextCard];
+                gs.busPath = [nextCard]; // Reset der Fahrt auf eine Karte
                 gs.busMsg = "FALSCH! Zurück zum Start und TRINKEN! 🍺";
                 players = players.map(p => {
                     if(p.uid === gs.busdriverUid) return { ...p, score: p.score + 1 };
@@ -639,6 +683,7 @@
 
 
         // --- HOST LOGIC ---
+        // Initialisiert das Deck und die Pyramide vor Spielbeginn
         window.hostStartGame = async function() {
             let fullDeck = createSkatDeck(); 
             let pyramid = [];
@@ -649,16 +694,16 @@
             }
             
             const gs = {
-                phase: 1, 
-                deck: [], 
-                pyramid: pyramid,
-                pyramidState: new Array(15).fill(false),
-                currentPyramidIndex: -1
+                phase: 1, deck: [], pyramid: pyramid, pyramidState: new Array(15).fill(false), currentPyramidIndex: -1
             };
             
             await updateDoc(doc(db, "lobbies", currentLobbyId), { status: "ingame", gameState: gs });
         }
 
+        /**
+         * State-Manager des Spiels (Gesteuert vom Host).
+         * Regelt den Übergang zwischen Runden, werte Tipps aus (Phase 1-4) und berechnet den Busfahrer.
+         */
         window.hostNextAction = async function() {
             const lobbyRef = doc(db, "lobbies", currentLobbyId);
             const snap = await getDocs(query(collection(db, "lobbies"), where("__name__", "==", currentLobbyId)));
@@ -670,7 +715,7 @@
                     const deck = createSkatDeck();
                     const card = deck[Math.floor(Math.random() * deck.length)];
                     
-                    // NEU: Auswertung der Runden 1-4 & Punkteverteilung
+                    // Auswertung der Runden 1-4 & automatische Punkteverteilung (Strafschlucke)
                     const color = (card.suit === '♥' || card.suit === '♦') ? 'red' : 'black';
                     let isCorrect = false;
                     
@@ -681,14 +726,11 @@
                         else if(phase === 4 && p.currentGuess === (card.suit + card.value)) isCorrect = true;
                     }
                     
-                    // Bei falschem Tipp gibt es Strafschlucke in Höhe der aktuellen Runden-Zahl (Runde 1 = 1, Runde 4 = 4)
+                    // Penalty korreliert mit der Runde (Runde 1 = 1 Schluck, etc.)
                     const penalty = isCorrect ? 0 : phase;
 
                     return { 
-                        ...p, 
-                        hand: [...p.hand, card], 
-                        currentGuess: null,
-                        score: p.score + penalty
+                        ...p, hand: [...p.hand, card], currentGuess: null, score: p.score + penalty
                     };
                 });
                 
@@ -698,13 +740,13 @@
             else if (phase === 5) {
                 let idx = data.gameState.currentPyramidIndex + 1;
                 
+                // Pyramide abgeschlossen -> Übergang zur Busfahrt
                 if(idx >= 15) { 
+                    // Algorithmus zum Finden des Busfahrers (Meiste ungenutzte Karten)
                     let playersCards = data.players.map(p => ({
-                        uid: p.uid,
-                        name: p.name,
-                        unused: p.hand.filter(c => !c.used).length
+                        uid: p.uid, name: p.name, unused: p.hand.filter(c => !c.used).length
                     }));
-                    playersCards.sort((a,b) => b.unused - a.unused);
+                    playersCards.sort((a,b) => b.unused - a.unused); // Absteigend sortieren
                     
                     const busdriverUid = playersCards[0].uid;
                     const busdriverName = playersCards[0].name;
@@ -733,13 +775,13 @@
             }
         }
 
+        // View-Rendering für den finalen Endscreen
         function renderEndScreen(data) {
             document.getElementById('view-game').classList.remove('active');
             document.getElementById('view-lobby').classList.remove('active');
             document.getElementById('view-result').classList.add('active');
             
             document.getElementById('my-hand').style.display = "none";
-            // Scoreboard für Endbildschirm verstecken (wir zeigen es ja nochmal schöner in der Mitte)
             document.querySelectorAll('#scoreboard').forEach(el => el.style.display = "none");
 
             const list = document.getElementById('result-list');
@@ -759,11 +801,13 @@
             list.innerHTML = html;
         }
 
+        // Hilfsfunktion zur Generierung eines 32-Karten Decks
         function createSkatDeck() {
             const s = ['♦', '♥', '♠', '♣'];
             const v = ['7', '8', '9', '10', 'B', 'D', 'K', 'A']; 
             let d = [];
             for(let su of s) for(let va of v) d.push({ suit: su, value: va, used: false });
+            // Fisher-Yates Shuffle Algorithmus
             for (let i = d.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [d[i], d[j]] = [d[j], d[i]];
@@ -771,7 +815,7 @@
             return d;
         }
 
-        // EXPORTS
+        // EXPORTS (Notwendig, damit In-Line HTML-Tags (onclick) die Funktionen in Modulen finden)
         window.joinLobby = joinLobby;
         window.createNewLobby = createNewLobby;
         window.deleteLobby = deleteLobby;

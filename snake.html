@@ -3,9 +3,10 @@
 <head>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕹️</text></svg>">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MBA Snake Global</title>
     <style>
+        /* --- GLOBALES LAYOUT & RESET --- */
         body { 
             background-color: #000; 
             color: #fff; 
@@ -15,14 +16,12 @@
             flex-direction: column; 
             align-items: center; 
             min-height: 100vh; 
-            touch-action: manipulation; 
+            touch-action: manipulation; /* Optimiert Touch-Eingaben für mobile Geräte */
             position: relative; 
             overflow-x: hidden;
         }
 
-        /* --- NEUES DESIGN (WIE HORSERACE) --- */
-        
-        /* HOME BUTTON */
+        /* --- UI ELEMENTS --- */
         .btn-home {
             position: absolute; top: 15px; left: 15px; 
             background: #000; color: #00ff00; border: 1px solid #00ff00; 
@@ -31,7 +30,6 @@
             text-decoration: none; font-size: 1rem;
         }
 
-        /* STATUS ANZEIGE (RECHTS) */
         #status-display {
             position: absolute; top: 15px; right: 15px;
             padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;
@@ -40,7 +38,7 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); }
 
-        /* --- ACTIVE USER SIDEBAR --- */
+        /* --- ACTIVE USER SIDEBAR (Off-Canvas Menu) --- */
         #user-sidebar {
             position: fixed; top: 0; right: -320px; width: 250px; height: 100vh;
             background: rgba(0, 0, 0, 0.95); border-left: 2px solid transparent; z-index: 2000;
@@ -54,52 +52,55 @@
         .user-list-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #666; object-fit: cover; }
         .online-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; }
 
-        /* FLOATING BUTTON */
-       /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
+        /* --- ACTIVE USER BUTTON (STEALTH MODE für Mobile UX) --- */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
-            width: 50px; height: 50px; /* Etwas kleiner als vorher */
+            width: 50px; height: 50px; 
             font-size: 1.2rem; cursor: pointer; z-index: 1900;
             border-radius: 50%; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); 
             display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s;
-            opacity: 0.5; /* Halb-transparent, damit das Spiel durchschimmert */
+            opacity: 0.5; /* Transparenz verhindert Blockieren des Spielfelds */
         }
         #toggle-users-btn:hover, #toggle-users-btn:active { 
-            transform: scale(1.1); background: #111; opacity: 1; /* Voll sichtbar beim Antippen */
+            transform: scale(1.1); background: #111; opacity: 1; 
         }
         .badge-count { 
             position: absolute; top: -3px; right: -3px; background: red; color: white; 
             font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 1px solid white; 
         }
 
-        /* MOBILE OPTIMIERUNG FÜR DEN BUTTON */
+        /* Mobile Layout Anpassungen */
         @media (max-width: 600px) {
             #toggle-users-btn {
-                bottom: 10px; right: 10px; /* Ganz in die Ecke quetschen */
-                width: 40px; height: 40px; /* Auf dem Handy noch kleiner */
-                font-size: 1rem;
-                opacity: 0.3; /* Auf dem Handy fast unsichtbar, bis man ihn klickt */
+                bottom: 10px; right: 10px; width: 40px; height: 40px; font-size: 1rem; opacity: 0.3; 
             }
-            .badge-count {
-                font-size: 0.6rem; padding: 1px 4px;
-            }
+            .badge-count { font-size: 0.6rem; padding: 1px 4px; }
         }
-        /* --- LAYOUT CONTAINER --- */
+
+        /* --- GAME & DASHBOARD LAYOUT (Flexbox & CSS Grid) --- */
         .main-layout { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 50px; margin-top: 80px; width: 100%; max-width: 1200px; padding: 20px; box-sizing: border-box; }
         .left-column { flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; }
         .right-column { width: 350px; min-width: 300px; }
+        
         .highscore-box { border: 2px solid #333; padding: 20px; border-radius: 15px; background: #111; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
         table { border-collapse: collapse; width: 100%; color: white; }
         th, td { border-bottom: 1px solid #333; padding: 10px; text-align: center; font-size: 0.9rem; }
         th { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 15px; text-transform: uppercase; }
         tr:last-child td { border-bottom: none; }
+        
+        /* HTML5 Canvas Styling */
         canvas { border: 4px solid #808080; background-color: #111; max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        
+        /* On-Screen Mobile Controls (CSS Grid für D-Pad Anordnung) */
         .controls { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px; margin-top: 20px; }
         .ctrl-btn { width: 60px; height: 60px; background: #333; border: 2px solid #808080; color: white; font-size: 1.5rem; border-radius: 10px; cursor: pointer; user-select: none; }
         .up { grid-column: 2; grid-row: 1; } .left { grid-column: 1; grid-row: 2; } .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
+        
+        /* SPA State-Class */
         .hidden { display: none !important; } .highlight { color: #00ff00; font-weight: bold; }
+        
         @media (max-width: 800px) { .main-layout { flex-direction: column; align-items: center; } .right-column { width: 100%; order: 2; } .left-column { width: 100%; order: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -160,8 +161,10 @@
         import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // Globaler State für das Spiel. WICHTIG FÜR SECURITY (Client-Side Check).
         let gameIsRunning = false;
 
+        // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -175,17 +178,18 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // SPA Initialisierung
         document.getElementById('start-screen').classList.remove('hidden');
         document.getElementById('game-view').classList.add('hidden');
         
         let playerName = "Gast";
 
-        // --- UI FUNCTIONS ---
+        // --- PWA OFFLINE DETECTION & UI FUNCTIONS ---
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) {
                 statusEl.innerText = "ONLINE 🟢"; statusEl.className = "status-online";
-                loadLeaderboard();
+                loadLeaderboard(); // Nur laden, wenn Netz da ist
             } else {
                 statusEl.innerText = "OFFLINE 🔴"; statusEl.className = "status-offline";
             }
@@ -198,7 +202,7 @@
             document.getElementById('user-sidebar').classList.toggle('open');
         }
 
-        // --- PRESENCE SYSTEM ---
+        // --- PRESENCE SYSTEM (Heartbeat Architektur) ---
         function startPresenceSystem(userEmail, userName) {
             const updateHeartbeat = async () => {
                 const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
@@ -226,14 +230,14 @@
                 let html = "";
                 activeUsers.forEach(u => {
                     const isMe = (u.name === userName);
-                    const style = isMe ? "border-color:#00ff00; background: #002200;" : "";
+                    const style = isMe ? "border-color:#00ff00; background:#002200;" : "";
                     html += `<div class="user-list-item" style="${style}"><img src="${u.avatar}" class="user-list-avatar"><div style="flex:1;"><div style="font-weight:bold; color:white;">${u.name} ${isMe ? '(Du)' : ''}</div><div style="font-size:0.7rem; color:#00ff00;">Online</div></div><div class="online-dot"></div></div>`;
                 });
                 listContainer.innerHTML = html;
             });
         }
 
-        // --- AUTH ---
+        // --- AUTHENTIFIZIERUNG ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 playerName = user.email.replace("@mba-arcade.com", "");
@@ -246,20 +250,15 @@
             }
         });
 
-        // --- GAME LOGIC ---
-        function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-view').classList.remove('hidden');
-            setTimeout(() => window.changeDirection({keyCode: 0}), 100);
-            gameIsRunning = true;
-            initGame();
-        }
-
+        // --- HIGHSCORE DATENBANK LOGIK ---
+        /**
+         * Lädt die Top 10 asynchron aus Firestore. 
+         * Nutzt serverseitige Sortierung (orderBy) und Limitierung (limit) zur Performance-Optimierung.
+         */
         async function loadLeaderboard() {
             if (!navigator.onLine) return;
             const tbody = document.getElementById('leaderboard-body');
             try {
-                // Table: scores_snake
                 const q = query(collection(db, "scores_snake"), orderBy("score", "desc"), limit(10));
                 const querySnapshot = await getDocs(q);
                 tbody.innerHTML = "";
@@ -275,23 +274,57 @@
             } catch (e) { console.error(e); tbody.innerHTML = "<tr><td colspan='3'>Fehler...</td></tr>"; }
         }
 
+        /**
+         * Speichert den Score nach Spielende in der Datenbank.
+         * SECURITY FEATURE (Ansatz 1): Prüft clientseitig, ob das Spiel überhaupt noch läuft (!gameIsRunning).
+         * Hinweis: Echte Sicherheit wird zusätzlich durch Firebase Security Rules im Backend durchgesetzt.
+         */
         async function saveScore(points) {
             if (!gameIsRunning) { console.warn("Cheating erkannt!"); return; }
             gameIsRunning = false;
-            if (!navigator.onLine) return;
+            
+            if (!navigator.onLine) return; // Prevent offline DB errors
             try {
                 await addDoc(collection(db, "scores_snake"), { name: playerName, score: points, date: new Date().toLocaleDateString('de-DE') });
                 loadLeaderboard();
             } catch (e) { console.error("Save error", e); }
         }
 
-        /* --- SNAKE ENGINE --- */
+        // --- HTML5 CANVAS SNAKE ENGINE ---
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            // Timeout verhindert sofortiges Auslösen durch Button-Fokus
+            setTimeout(() => window.changeDirection({keyCode: 0}), 100);
+            gameIsRunning = true;
+            initGame();
+        }
+
+        // Canvas 2D API Referenzen
         const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
+        
+        // Spielvariablen (Grid-Größe, Schlangen-Array, Score, Richtung)
         let box = 20; let snake = []; let food; let score = 0; let d; let game;
 
-        function initGame() { snake = []; snake[0] = { x: 9 * box, y: 10 * box }; score = 0; d = undefined; createFood(); if(game) clearInterval(game); game = setInterval(draw, 100); }
-        function createFood() { food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; for(let part of snake) { if(part.x == food.x && part.y == food.y) createFood(); } }
+        function initGame() { 
+            snake = []; 
+            snake[0] = { x: 9 * box, y: 10 * box }; // Startposition
+            score = 0; 
+            d = undefined; 
+            createFood(); 
+            if(game) clearInterval(game); 
+            // Fixed-Tick Game Loop: Wird exakt alle 100ms aufgerufen
+            game = setInterval(draw, 100); 
+        }
 
+        // Spawnt Futter auf zufälligen Raster-Koordinaten
+        function createFood() { 
+            food = { x: Math.floor(Math.random() * 19 + 1) * box, y: Math.floor(Math.random() * 19 + 1) * box }; 
+            // Verhindert Spawnen von Essen IM Körper der Schlange
+            for(let part of snake) { if(part.x == food.x && part.y == food.y) createFood(); } 
+        }
+
+        // Controller-Listener für Tastatur und On-Screen D-Pad
         document.addEventListener("keydown", changeDirection);
         function changeDirection(event) {
             let key = event.keyCode;
@@ -300,29 +333,70 @@
         }
         window.changeDirection = changeDirection; 
 
+        /**
+         * Haupt-Render und Update-Schleife der Snake Engine.
+         */
         function draw() {
+            // Hintergrund leeren
             ctx.fillStyle = "#000000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Schlange rendern (Kopf erhält eine hellere Farbe)
             for(let i = 0; i < snake.length; i++) {
                 ctx.fillStyle = (i == 0) ? "#33ff33" : "#00ff00"; ctx.strokeStyle = "#000000";
                 ctx.fillRect(snake[i].x, snake[i].y, box, box); ctx.strokeRect(snake[i].x, snake[i].y, box, box);
             }
+            
+            // Futter rendern
             ctx.fillStyle = "#ff0000"; ctx.fillRect(food.x, food.y, box, box);
+            
+            // Bewegungsvektor des Kopfes berechnen
             let snakeX = snake[0].x; let snakeY = snake[0].y;
             if(d == "LEFT") snakeX -= box; if(d == "UP") snakeY -= box; if(d == "RIGHT") snakeX += box; if(d == "DOWN") snakeY += box;
-            if(snakeX == food.x && snakeY == food.y) { score++; createFood(); } else { snake.pop(); }
+            
+            // Logik: Futter gefressen?
+            if(snakeX == food.x && snakeY == food.y) { 
+                score++; createFood(); 
+            } else { 
+                // Wenn kein Futter gefressen wurde, lösche letztes Schwanzteil (Fortbewegung)
+                snake.pop(); 
+            }
+            
             let newHead = { x: snakeX, y: snakeY };
+            
+            // Kollisionserkennung: Wand oder eigener Körper
             if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                clearInterval(game);
+                clearInterval(game); // Game Loop stoppen
+                
+                // Visuelles Feedback beim Crash
                 let crashDrawX = Math.max(0, Math.min(canvas.width - box, snakeX));
                 let crashDrawY = Math.max(0, Math.min(canvas.height - box, snakeY));
                 ctx.fillStyle = "#ff0000"; ctx.fillRect(crashDrawX, crashDrawY, box, box); ctx.strokeStyle = "#ffffff"; ctx.strokeRect(crashDrawX, crashDrawY, box, box);
+                
+                // Score asynchron hochladen
                 saveScore(score);
-                setTimeout(() => { alert("Game Over! Score: " + score); document.getElementById('start-screen').classList.remove('hidden'); document.getElementById('game-view').classList.add('hidden'); }, 50);
+                
+                setTimeout(() => { 
+                    alert("Game Over! Score: " + score); 
+                    // SPA-View Routing zurück zum Startscreen
+                    document.getElementById('start-screen').classList.remove('hidden'); 
+                    document.getElementById('game-view').classList.add('hidden'); 
+                }, 50);
                 return;
             }
-            snake.unshift(newHead); document.getElementById("score").innerText = score;
+            
+            // Setzt den neuen Kopf auf das Array
+            snake.unshift(newHead); 
+            document.getElementById("score").innerText = score;
         }
-        function collision(head, array) { for(let i = 0; i < array.length; i++) { if(head.x == array[i].x && head.y == array[i].y) return true; } return false; }
+
+        // Prüft, ob der Kopf mit einem Segment des eigenen Körpers kollidiert
+        function collision(head, array) { 
+            for(let i = 0; i < array.length; i++) { 
+                if(head.x == array[i].x && head.y == array[i].y) return true; 
+            } 
+            return false; 
+        }
+
         document.getElementById('btn-start-game').addEventListener('click', startGame);
     </script>
 </body>
