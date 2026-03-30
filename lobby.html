@@ -42,7 +42,7 @@
         .status-online { color: #00ff00; border-color: #00ff00; background: rgba(0,255,0,0.1); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         .status-offline { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 10px rgba(255,0,0,0.2); }
 
-        /* --- ACTIVE USER SIDEBAR (Off-Canvas Menü) --- */
+        /* --- ACTIVE USER SIDEBAR --- */
         #user-sidebar {
             position: fixed; 
             top: 0; 
@@ -108,9 +108,7 @@
                 font-size: 1rem;
                 opacity: 0.3; 
             }
-            .badge-count {
-                font-size: 0.6rem; padding: 1px 4px;
-            }
+            .badge-count { font-size: 0.6rem; padding: 1px 4px; }
         }
 
         /* --- LIVE LOCATION TICKER --- */
@@ -266,7 +264,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // WICHTIG: Hier wurde deleteDoc im Import ergänzt!
         import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -412,9 +409,10 @@
 
                 if (user.email === ADMIN_EMAIL) {
                     initAdminWatch(user.email);
-                } else {
-                    initSpySystem(name, user.email);
                 }
+                // Spy-System wird nun für JEDEN ausgeführt, auch für den Admin
+                initSpySystem(name, user.email);
+                
             } else {
                 window.location.href = "index.html"; 
             }
@@ -437,9 +435,8 @@
                 let html = ""; let c = 0;
                 snap.forEach(doc => { 
                     const d = doc.data(); 
-                    // FIX 2: Jeder User wird nun namentlich am Chip erwähnt
-                    const userNameDisplay = d.user ? (d.user + ": ") : ""; 
-                    html += `<div class="loc-chip">📍 ${userNameDisplay}${d.city}, ${d.country}</div>`; 
+                    // Der Username wird nicht mehr angezeigt, nur noch Stadt und Land
+                    html += `<div class="loc-chip">📍 ${d.city}, ${d.country}</div>`; 
                     c++; 
                 });
                 list.innerHTML = html; count.innerText = c;
@@ -463,8 +460,6 @@
                             const ci = d.address.city || d.address.town || d.address.village || "Unknown";
                             const co = d.address.country_code ? d.address.country_code.toUpperCase() : "??";
                             
-                            // FIX 2: Die ID ist jetzt der Benutzername statt die Stadt. 
-                            // Dadurch überschreiben sich User am gleichen Ort nicht mehr!
                             const docId = name.replace(/[^a-zA-Z0-9]/g, "_");
                             await setDoc(doc(db, "public_locations", docId), { user: name, city: ci, country: co, last_seen: new Date() });
                         }
@@ -489,16 +484,13 @@
             });
         }
 
-        // FIX 1: Robustes Löschen der gelesenen Alarme
         window.dismissAlarm = async function() {
-            // Sofort lokal ausblenden, damit das UI schnell reagiert
             document.getElementById('admin-alarm-box').style.display = 'none';
             
             try {
                 const s = await getDocs(query(collection(db, "security_logs"), where("viewed", "==", false)));
                 const deletePromises = [];
                 s.forEach((d) => {
-                    // Wir löschen den Alarm nun direkt aus der Datenbank. Das beugt Race-Conditions vor.
                     deletePromises.push(deleteDoc(doc(db, "security_logs", d.id))); 
                 });
                 await Promise.all(deletePromises);
