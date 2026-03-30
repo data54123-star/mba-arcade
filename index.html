@@ -94,6 +94,19 @@
             const errorDiv = document.getElementById('error-msg');
 
             if(!user || !pass) { errorDiv.innerText = "Bitte alles ausfüllen!"; return; }
+
+            // --- NEU: Clientseitige Passwort-Validierung (nur bei Registrierung) ---
+            if (!isLoginMode) {
+                // Regular Expressions (RegEx) zur Prüfung der Komplexität
+                const hasUpperCase = /[A-Z]/.test(pass);
+                const hasNumbers = /\d/.test(pass);
+                const hasSpecial = /[^A-Za-z0-9]/.test(pass); // Prüft auf nicht-alphanumerische Zeichen
+
+                if (!hasUpperCase || !hasNumbers || !hasSpecial) {
+                    errorDiv.innerText = "Passwort braucht: Großbuchstabe, Zahl & Sonderzeichen!";
+                    return; // Bricht die Funktion hier ab, Firebase wird nicht aufgerufen
+                }
+            }
             
             // Workaround für verbesserte UX: Firebase Auth erwartet zwingend eine E-Mail-Adresse.
             // Um den Usern einen simplen Login nur über Benutzernamen zu ermöglichen, 
