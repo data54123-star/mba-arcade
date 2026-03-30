@@ -1,6 +1,4 @@
 # mba-arcade
-# mba-arcade
-
 
 MBA Arcade - PWA Projekt
 Projektarbeit im Rahmen der Vorlesung Web-Entwicklung / PWA-Programmierung
