@@ -27,7 +27,6 @@
 
         h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); margin-bottom: 10px; text-align: center; }
         
-        /* Mobile-First: Media-Query für optimierte Darstellung der Überschrift auf kleinen Screens */
         @media (max-width: 600px) {
             h1 { margin-top: 60px; }
         }
@@ -83,9 +82,7 @@
             box-shadow: 0 0 5px #00ff00;
         }
 
-        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- 
-           UX-Entscheidung: Der Button wird transparent dargestellt, um das UI-Cluttering 
-           auf mobilen Endgeräten zu reduzieren. */
+        /* --- ACTIVE USER BUTTON (STEALTH MODE) --- */
         #toggle-users-btn {
             position: fixed; bottom: 20px; right: 20px;
             background: #000; color: #00ff00; border: 2px solid #00ff00;
@@ -116,7 +113,7 @@
             }
         }
 
-        /* --- LIVE LOCATION TICKER (Geolocation Feature) --- */
+        /* --- LIVE LOCATION TICKER --- */
         .location-box {
             width: 100%; max-width: 500px; margin-bottom: 20px; margin-top: 30px;
             border: 1px solid #333; background: #000; padding: 10px; border-radius: 5px;
@@ -146,7 +143,7 @@
             box-shadow: 0 0 15px rgba(0,255,0,0.3);
         }
 
-        /* --- CSS GRID SYSTEM (Spiele-Auswahl) --- */
+        /* --- CSS GRID SYSTEM --- */
         .view-section { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
         .active { display: flex; }
 
@@ -160,16 +157,13 @@
         .game-card:hover { transform: translateY(-5px); border-color: #00ff00; box-shadow: 0 5px 15px rgba(0,255,0,0.1); }
         .game-title { font-size: 1.5rem; color: #fff; font-weight: bold; display: block; margin-bottom: 10px; }
         .game-desc { color: #aaa; font-size: 0.9rem; }
-        /* Media Query für Grid: 2 Spalten auf Tablets/Desktops */
         @media (min-width: 768px) { .game-card { grid-column: span 6; } }
 
-        /* Interaktions-Buttons */
         .btn-container { grid-column: span 12; display: flex; flex-direction: column; align-items: center; margin-top: 20px; width: 100%; }
         .btn-action { margin-top: 15px; width: 100%; max-width: 300px; padding: 12px; background: #333; color: white; border: 1px solid #888; cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.2s; }
         .btn-action:hover { background: #444; border-color: #fff; }
         .btn-logout { margin-top: 30px; background: transparent; border: 1px solid #ff4444; color: #ff4444; padding: 10px 20px; cursor: pointer; font-family: inherit; border-radius: 5px; }
         
-        /* --- PROFIL BEARBEITEN (SPA View) --- */
         .profile-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
         .avatar-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
         .avatar-option { width: 60px; height: 60px; border: 2px solid #333; cursor: pointer; opacity: 0.6; transition: all 0.2s; object-fit: cover; }
@@ -272,9 +266,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // WICHTIG: Hier wurde deleteDoc im Import ergänzt!
+        import { getFirestore, collection, addDoc, doc, onSnapshot, query, where, getDocs, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // FIREBASE INITIALISIERUNG
         const firebaseConfig = {
             apiKey: "AIzaSyASbziojAan2xJ3EoJ0RDPa9jh1Z-5UGX0",
             authDomain: "mba-arcade.firebaseapp.com",
@@ -288,10 +282,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app); 
 
-        // --- PWA OFFLINE DETECTION ---
-        /**
-         * Prüft kontinuierlich den Verbindungsstatus über die Browser-API (navigator).
-         */
         function updateOnlineStatus() {
             const statusEl = document.getElementById('status-display');
             if (navigator.onLine) {
@@ -308,11 +298,6 @@
             document.getElementById('user-sidebar').classList.toggle('open');
         }
 
-        // --- PRESENCE SYSTEM (HEARTBEAT) ---
-        /**
-         * 1. Schreibt periodisch einen Zeitstempel in Firestore (Heartbeat).
-         * 2. Hört asynchron auf Firestore-Updates, um eine Live-Liste aktiver User zu rendern.
-         */
         function startPresenceSystem(userEmail, userName) {
             const updateHeartbeat = async () => {
                 const currentAvatar = localStorage.getItem('mba_avatar') || "100.jpg";
@@ -324,14 +309,14 @@
             };
 
             updateHeartbeat();
-            setInterval(updateHeartbeat, 30000); // 30-Sekunden Intervall
+            setInterval(updateHeartbeat, 30000); 
 
             const q = query(collection(db, "online_status"));
             onSnapshot(q, (snapshot) => {
                 const listContainer = document.getElementById('user-list-container');
                 const badge = document.getElementById('active-user-count');
                 const now = new Date().getTime();
-                const timeout = 2 * 60 * 1000; // Filtert User heraus, die länger als 2 Min nicht geupdatet haben
+                const timeout = 2 * 60 * 1000; 
 
                 let activeUsers = [];
                 snapshot.forEach(doc => {
@@ -368,14 +353,8 @@
             });
         }
 
-
-        // --- PROFIL-MANAGEMENT (LocalStorage) ---
         const myAvatars = ["100.jpg", "102.jpg", "200.jpg", "205.jpg", "400.jpg"];
         
-        /**
-         * Lädt den Avatar des Nutzers asynchron aus dem LocalStorage (Browser-Speicher),
-         * um unnötige Datenbankaufrufe zu vermeiden.
-         */
         function initProfile() {
             const container = document.getElementById('avatar-container');
             const currentImg = document.getElementById('current-user-avatar');
@@ -390,7 +369,6 @@
                 img.className = 'avatar-option';
                 if(filename === savedAvatar) img.classList.add('selected');
                 
-                // Click-Handler zur Avatar-Auswahl (State Update in DOM & LocalStorage)
                 img.onclick = function() {
                     document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
                     img.classList.add('selected');
@@ -401,7 +379,6 @@
             });
         }
 
-        // --- FIREBASE AUTHENTICATION API ---
         window.changeUserPassword = function() {
             const newPw = document.getElementById('new-password').value;
             const user = auth.currentUser;
@@ -417,9 +394,6 @@
             }
         }
 
-        /**
-         * SPA-Routing: Toggelt aktive CSS-Klassen, um Views auszutauschen.
-         */
         window.switchView = function(viewName) {
             document.getElementById('view-dashboard').classList.remove('active');
             document.getElementById('view-profile').classList.remove('active');
@@ -427,10 +401,8 @@
             if(viewName === 'profile') document.getElementById('view-profile').classList.add('active');
         }
 
-        // --- AUTH-STATE LISTENER & INITIALISIERUNG ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Name aus der fiktiven E-Mail extrahieren
                 const name = user.email.replace("@mba-arcade.com", ""); 
                 document.getElementById("user-greeting").innerText = "Hallo " + name + "!";
                 
@@ -438,30 +410,23 @@
                 initLocationBoard();
                 startPresenceSystem(user.email, name);
 
-                // Geofencing Routing: Trennung zwischen Zielperson (Admin) und Teilnehmern (Spys)
                 if (user.email === ADMIN_EMAIL) {
                     initAdminWatch(user.email);
                 } else {
                     initSpySystem(name, user.email);
                 }
             } else {
-                window.location.href = "index.html"; // Redirect bei unautorisiertem Zugriff
+                window.location.href = "index.html"; 
             }
         });
 
         window.logout = function() { signOut(auth).then(() => window.location.href = "index.html"); }
         
-        // --- HARDWARE API: GEOFENCING SYSTEM (JGA USE CASE) ---
         const ADMIN_EMAIL = "benedikt@mba-arcade.com"; 
-        
-        // HIER GEÄNDERT FÜR DIE VIDEO-PRÄSENTATION: Koordinaten für Cagli, Italien!
         const TARGET_LAT = 43.5463;  
         const TARGET_LON = 12.6511;
-        const ALARM_RADIUS_KM = 50;    // Schwellenwert auf 50km erhöht für die Videopräsentation
+        const ALARM_RADIUS_KM = 50;   
 
-        /**
-         * Abonniert Echtzeit-Updates aller öffentlichen Standorte (Grob-Lokalisierung)
-         */
         function initLocationBoard() {
             const q = query(collection(db, "public_locations")); 
             onSnapshot(q, (snap) => {
@@ -470,16 +435,17 @@
                 if(snap.empty) { list.innerHTML = '<span style="color:#666;">Keine Signale.</span>'; count.innerText = "0"; return; }
                 
                 let html = ""; let c = 0;
-                snap.forEach(doc => { const d = doc.data(); html += `<div class="loc-chip">📍 ${d.city}, ${d.country}</div>`; c++; });
+                snap.forEach(doc => { 
+                    const d = doc.data(); 
+                    // FIX 2: Jeder User wird nun namentlich am Chip erwähnt
+                    const userNameDisplay = d.user ? (d.user + ": ") : ""; 
+                    html += `<div class="loc-chip">📍 ${userNameDisplay}${d.city}, ${d.country}</div>`; 
+                    c++; 
+                });
                 list.innerHTML = html; count.innerText = c;
             });
         }
 
-        /**
-         * Greift auf das GPS-Modul des Endgeräts zu (navigator.geolocation).
-         * 1. Berechnet die Distanz zum Ziel.
-         * 2. Nutzt die OpenStreetMap API (Reverse Geocoding), um Koordinaten in Städtenamen zu wandeln.
-         */
         function initSpySystem(name, userEmail) {
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -490,7 +456,6 @@
                         if (dist <= ALARM_RADIUS_KM) triggerSilentAlarm(userEmail, dist);
                     }
                     
-                    // Reverse-Geocoding Request (Fetch API)
                     try {
                         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         const d = await res.json();
@@ -498,19 +463,16 @@
                             const ci = d.address.city || d.address.town || d.address.village || "Unknown";
                             const co = d.address.country_code ? d.address.country_code.toUpperCase() : "??";
                             
-                            // Normalisierung der ID für Firestore (Keine Leer-/Sonderzeichen)
-                            const id = `${ci}_${co}`.replace(/[^a-zA-Z0-9]/g, "_");
-                            await setDoc(doc(db, "public_locations", id), { city: ci, country: co, last_seen: new Date() });
+                            // FIX 2: Die ID ist jetzt der Benutzername statt die Stadt. 
+                            // Dadurch überschreiben sich User am gleichen Ort nicht mehr!
+                            const docId = name.replace(/[^a-zA-Z0-9]/g, "_");
+                            await setDoc(doc(db, "public_locations", docId), { user: name, city: ci, country: co, last_seen: new Date() });
                         }
-                    } catch (e) {} // Fehler lautlos fangen (Fail-Safe)
-                }, () => {}); // Fallback bei abgelehnter GPS-Freigabe
+                    } catch (e) {} 
+                }, () => {}); 
             }
         }
 
-        /**
-         * Exklusiver Listener für den Admin: Reagiert asynchron auf eingehende Alarme.
-         * Nutzt die Vibration-API des Handys zur physischen Benachrichtigung.
-         */
         function initAdminWatch(userEmail) {
             if (userEmail !== ADMIN_EMAIL) return; 
             const q = query(collection(db, "security_logs"), where("viewed", "==", false));
@@ -520,45 +482,42 @@
                     document.getElementById('admin-alarm-box').style.display = 'block';
                     document.getElementById('intruder-details').innerText = `Zielperson: ${l.intruder} (${l.distance}km)`;
                     
-                    // Hardware API Integration (Haptic Feedback)
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
                 } else {
-                    // FIX: Verstecke die Box, wenn die Liste der offenen Alarme leer ist!
                     document.getElementById('admin-alarm-box').style.display = 'none';
                 }
             });
         }
 
-        // Quittiert den Alarm in der Datenbank
+        // FIX 1: Robustes Löschen der gelesenen Alarme
         window.dismissAlarm = async function() {
+            // Sofort lokal ausblenden, damit das UI schnell reagiert
             document.getElementById('admin-alarm-box').style.display = 'none';
-            const s = await getDocs(query(collection(db, "security_logs"), where("viewed", "==", false)));
             
-            // FIX: Alle Updates in einem Array sammeln und warten, bis sie durch sind (Vermeidet Race Conditions)
-            const updatePromises = [];
-            s.forEach((d) => {
-                updatePromises.push(updateDoc(doc(db, "security_logs", d.id), { viewed: true }));
-            });
-            await Promise.all(updatePromises);
+            try {
+                const s = await getDocs(query(collection(db, "security_logs"), where("viewed", "==", false)));
+                const deletePromises = [];
+                s.forEach((d) => {
+                    // Wir löschen den Alarm nun direkt aus der Datenbank. Das beugt Race-Conditions vor.
+                    deletePromises.push(deleteDoc(doc(db, "security_logs", d.id))); 
+                });
+                await Promise.all(deletePromises);
+            } catch(e) {
+                console.warn("Datenbank-Aktion fehlgeschlagen. Alarm wurde lokal ausgeblendet.", e);
+            }
         }
 
-        // Triggert den Alarm in Firestore (Mit Cooldown via LocalStorage zur Schonung der Quotas)
         async function triggerSilentAlarm(name, distance) {
             const last = localStorage.getItem('last_jga_alarm'); const now = new Date().getTime();
-            if (last && (now - last) < 3600000) return; // Cooldown: 1 Stunde
+            if (last && (now - last) < 3600000) return; 
             try { 
                 await addDoc(collection(db, "security_logs"), { intruder: name, distance: Math.round(distance), timestamp: new Date(), viewed: false });
                 localStorage.setItem('last_jga_alarm', now);
             } catch(e) {}
         }
 
-        /**
-         * Mathematischer Helper: Haversine-Formel.
-         * Berechnet die exakte Distanz (Luftlinie in Kilometern) zwischen zwei Geokoordinaten 
-         * unter Berücksichtigung der Erdkrümmung.
-         */
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Erdradius in KM
+            const R = 6371; 
             const dLat = (lat2-lat1)*(Math.PI/180); const dLon = (lon2-lon1)*(Math.PI/180);
             const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*(Math.PI/180))*Math.cos(lat2*(Math.PI/180))*Math.sin(dLon/2)*Math.sin(dLon/2); 
             return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
