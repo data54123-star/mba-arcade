@@ -522,6 +522,9 @@
                     
                     // Hardware API Integration (Haptic Feedback)
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
+                } else {
+                    // FIX: Verstecke die Box, wenn die Liste der offenen Alarme leer ist!
+                    document.getElementById('admin-alarm-box').style.display = 'none';
                 }
             });
         }
@@ -530,7 +533,13 @@
         window.dismissAlarm = async function() {
             document.getElementById('admin-alarm-box').style.display = 'none';
             const s = await getDocs(query(collection(db, "security_logs"), where("viewed", "==", false)));
-            s.forEach(async (d) => await updateDoc(doc(db, "security_logs", d.id), { viewed: true }));
+            
+            // FIX: Alle Updates in einem Array sammeln und warten, bis sie durch sind (Vermeidet Race Conditions)
+            const updatePromises = [];
+            s.forEach((d) => {
+                updatePromises.push(updateDoc(doc(db, "security_logs", d.id), { viewed: true }));
+            });
+            await Promise.all(updatePromises);
         }
 
         // Triggert den Alarm in Firestore (Mit Cooldown via LocalStorage zur Schonung der Quotas)
